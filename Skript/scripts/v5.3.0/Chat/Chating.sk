@@ -1,0 +1,31 @@
+
+on chat:
+    set {_m} to message
+    if {국가채팅::%uuid of player%} is set:
+        cancel event
+        if {국가가입::%uuid of player%} is not set:
+            send "&f[&c오류&f] &cUnknwon Error: &7다시 한번 채팅을 입력해주세요." to player
+            delete {국가채팅::%uuid of player%}
+        else:
+            loop {국가::국가원::%{국가가입::%uuid of player%}%::*}:
+                set {_index} to loop-index
+                set {_index} to {_index} parsed as player
+                set {_index} to name of {_index}
+                set {_index} to {_index} parsed as player
+                send "&f[&6국가채팅&f] %player% :: %message%" to {_index}
+            post "`[%now formatted as "HH:mm:ss"%] [%{국가가입::%uuid of player%}%] %player% :: %message%`" to guild channel with id "1176537274649944074"
+            stop
+    else:
+        set {_m} to message
+        replace all "섹스" or "꼬추" or "병신" or "지랄" or "좆" or "새끼" or "ㅂㅅ" or "ㅄ" or "ㅅㅂ" or "시발" or "씨발" or "느금마" or "니엄마" or "꽈추" or "잡년" or "일베" or "자지" or "보지" or "자1지" or "보2지" or "시8" with "&c**&r" in {_m} 
+        set {_player} to player
+        if {국가가입::%uuid of player%} is not set:
+            set {_tomsg} to "&f[%{랭크::%uuid of player%}%&r&f] &f[&6모험가&f] %{_player}%&f :: %{_m}%"
+            #set {_tomsg} to "&4Unknown"
+        else:
+            set {_tomsg} to "&f[%{랭크::%uuid of player%}%&r&f] &f[&a##%{국가가입::%uuid of player%}%&r&f] %{_player}%&f :: %{_m}%"
+            #set {_tomsg} to "&4Unknown"
+        set message format to {_tomsg}
+        post "`[%now formatted as "HH:mm:ss"%] %player% :: %message%`" to guild channel with id "1176537274649944074"
+
+

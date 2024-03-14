@@ -1,0 +1,27 @@
+command /give::nuclearsk [<text>]:
+    trigger:
+        if sender is op:
+            if arg-1 is "RB 1형":
+                give 1 tnt named "&f[&6블록&f] &cRB 1형" with lore "&f[&a+&f] &b우클릭&7(&fϛ&7) &f으로 설치 후 &b15&f초 뒤 폭파됩니다." and "&f[&7-&f] 핵폭탄 위력은 숫자로 &b25 &f입니다." to player
+            else if arg-1 is "RB 2형":
+                give 1 tnt named "&f[&6블록&f] &cRB 2형" with lore "&f[&a+&f] &b우클릭&7(&fϛ&7) &f으로 설치 후 &b15&f초 뒤 폭파됩니다." and "&f[&7-&f] 핵폭탄 위력은 숫자로 &b50 &f입니다." to player
+
+
+on place of tnt:
+    if name of player's tool contains "&f[&6블록&f]":
+        if name of player's tool is "&f[&6블록&f] &cRB 1형":
+            cancel event
+            remove 1 of player's tool from player's tool
+            loop players in radius 25 around location of event-block:
+                send title "&cNuclear Bomb" with subtitle "&6RB 1형이 설치되었습니다." to loop-player
+                send "&f[&cNuclear Bomb&f] &b15&f초 뒤 핵무기가 폭파합니다. 대피하세요." to loop-player
+            wait 15 seconds
+            create an explosion of force 25 at location of event-block
+        else if name of player's tool is "&f[&6블록&f] &cRB 2형":
+            cancel event
+            remove 1 of player's tool from player's tool
+            loop players in radius 50 around location of event-block:
+                send title "&4Nuclear Bomb" with subtitle "&6RB 2형이 설치되었습니다." to loop-player
+                send "&f[&4Nuclear Bomb&f] &b15&f초 뒤 핵무기가 폭파합니다. 대피하세요." to loop-player
+            wait 15 seconds
+            create an explosion of force 50 at location of event-block

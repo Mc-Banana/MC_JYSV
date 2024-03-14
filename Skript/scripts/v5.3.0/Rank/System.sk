@@ -1,0 +1,89 @@
+command /랭크:생성 [<text>] [<text>]:
+    trigger:
+        if player is op:
+            if sender is "jinyoon" or "CRBT":
+                if arg-1 and arg-2 is set:
+                    if {랭크목록::%arg-1%} is set:
+                        send "&c랭크를 만드려고 했으나 이미 같은 ID 로 생성된 랭크가 있습니다!" to player
+                    else:
+                        set {랭크목록::%arg-1%} to colored arg-2
+                        send "&a랭크가 생성되었습니다!" to sender
+                        send "&7ID : %arg-1% | 적용된 랭크 : %{랭크목록::%arg-1%}%" to player
+                        stop
+
+                else:
+                    send "&c랭크를 만들려고 했으나 사용법이 올바르지 않습니다." to player
+                    send "&6올바른 사용법&f: /랭크:생성 <ID> <랭크>" to player
+                    stop
+            else:
+                send "&c권한이 없습니다." to player
+        else:
+            send "&c권한이 없습니다." to player
+
+command /랭크:로그:
+    trigger:
+        send "&6Prefix List: (%number of {랭크목록::*}%):" to player
+        loop {랭크목록::*}:
+            send "&6| &7ID &f: &7%loop-index% &6| &7Value &f: &r%{랭크목록::%loop-index%}%" to player
+        stop
+
+command /랭크:제거 [<text>]:
+    trigger:
+        if player is op:
+            if sender is "jinyoon" or "CRBT":
+                if arg-1 is set:
+                    if {랭크목록::%arg-1%} is set:
+                        loop {랭크::*}:
+                            if {랭크::%loop-index%} is {랭크목록::%arg-1%}:
+                                set {랭크::%loop-index%} to {랭크목록::newbie}
+                        delete {랭크목록::%arg-1%}
+                        send "&c해당 랭크를 제거했습니다!" to player
+                    else:
+                        send "&c해당 ID 를 가진 랭크가 없습니다." to sender
+
+                else:
+                    send "&c랭크를 만들려고 했으나 사용법이 올바르지 않습니다." to player
+                    send "&6올바른 사용법&f: /랭크:제거 <ID>" to player
+                    stop
+            else:
+                send "&c권한이 없습니다." to player
+        else:
+            send "&c권한이 없습니다." to player
+
+command /랭크:랭크권 [<text>]:
+    trigger:
+        if {랭크목록::%arg-1%} is not set:
+            send "&c%arg-1% 고유 ID 를 가진 랭크가 없습니다." to player
+        else:
+            give 1 enchanted book named "&a랭크권 &f- %{랭크목록::%arg-1%}%" with lore "&7우클릭 시 해당 랭크가 적용됩니다" and "이전 랭크는 돌려주지 않으니 신중하게 사용해주세요." to player
+            send "&a랭크권이 부여되었습니다." to player
+
+on right click with enchanted book:
+    if name of player's tool contains "&a랭크권 &f- ":
+        set {_s} to name of player's tool
+        replace all "&a랭크권 &f- " with "" in {_s}
+        remove 1 of player's tool from player's tool
+        set {랭크::%uuid of player%} to {_s}
+        send "&f[&6랭크&f] 랭크가 부여되었습니다." to player
+        send "&f[&6랭크&f] 다른 랭크권을 사용하실 경우 해당 랭크는 사라집니다." to player
+        stop
+
+command /랭크 [<text>] [<offlineplayer>]:
+    trigger:
+        if sender is op:
+            if sender is "jinyoon" or "CRBT":
+                if {랭크목록::%arg-1%} is not set:
+                    send "&c%arg-1% 고유 ID 를 가진 랭크가 없습니다." to player
+                else if arg-2 is not set:
+                    send "&c랭크를 지급할 플레이어의 이름이 없습니다." to player
+                else:
+                    set {랭크::%uuid of arg-2%} to {랭크목록::%arg-1%}
+                    send "&a랭크가 적용되었습니다!" to player
+
+command /후원확인 [<offlineplayer>] [<integer>]:
+    trigger:
+        if sender is op:
+            if arg-1 and arg-2 is set:
+                broadcast "&f[&6후원&f] &b%arg-1% &f님께서 &b%Unit(arg-2)% &f원을 후원해주셨습니다!"
+                add arg-2 to {코인::%uuid of arg-1%}
+                add arg-2 to {후원금액}

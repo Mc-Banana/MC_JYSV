@@ -1,0 +1,5 @@
+command /버전설정 [<text>]:
+    trigger:
+        if sender is op:
+            set {버전} to colored arg-1
+            send "&a설정되었어요!" to sender

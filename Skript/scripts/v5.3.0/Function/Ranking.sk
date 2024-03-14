@@ -1,0 +1,19 @@
+function EffSettingRank(s:senders,key:texts,value:numbers,form:text="",line:integer=5):
+    set {_form} to "[<rank>] <key> = <value>" if {_form} is ""
+    loop {_value::*}:
+        set {_value} to loop-value * 10000
+        add loop-index to {_rank::%{_value}%::*}
+    set {_index::*} to reversed indexes of {_rank::*}
+    set {_n} to 0
+    loop {_index::*}:
+        set {_value} to loop-value parsed as integer / 10000
+        add 1 to {_rank}
+        loop {_rank::%loop-value-1%::*}:
+            add 1 to {_n}
+            set {_msg} to {_form}
+            replace "<rank>" with "%{_rank}%" in {_msg}
+            replace "<key>" with {_key::%loop-value-2%} in {_msg}
+            replace "<value>" with "%Unit({_value})%" in {_msg}
+            set {ranking::%{_n}%} to {_msg}
+        if {_rank} >= {_line}:
+            exit loop

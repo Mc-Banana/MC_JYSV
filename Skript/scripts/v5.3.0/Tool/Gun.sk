@@ -1,0 +1,58 @@
+command /give::gunsk [<text>]:
+    trigger:
+        if sender is op:
+            if arg-1 is "리볼버":
+                give 1 wooden hoe named "&f[&6총&f] &e리볼버 &7-&6 PG43" with lore "&f[&a+&f] &b우클릭&7(&fϛ&7) &f시 발사됩니다." and "&f[&7-&f] 총알은 &b화살&7(arrows) &f기준입니다." to player
+                send "&f[&bGUNSK&f] &a%arg-1% &f가 지급되었습니다." to sender
+            else if arg-1 is "소총":
+                give 1 stone hoe named "&f[&6총&f] &e소총 &7-&6 AK74" with lore "&f[&a+&f] &b우클릭&7(&fϛ&7) &f시 발사됩니다." and "&f[&7-&f] 총알은 &b화살&7(arrows) &f기준입니다." to player
+                send "&f[&bGUNSK&f] &a%arg-1% &f가 지급되었습니다." to sender
+            else if arg-1 is "기관총":
+                give 1 iron hoe named "&f[&6총&f] &e기관총 &7-&c M2" with lore "&f[&a+&f] &b우클릭&7(&fϛ&7) &f시 발사됩니다." and "&f[&7-&f] 총알은 &b화살&7(arrows) &f기준입니다." to player
+                send "&f[&bGUNSK&f] &a%arg-1% &f가 지급되었습니다." to sender
+
+
+
+on right click with any hoe:
+    if name of player's tool contains "&f[&6총&f]":
+        if name of player's tool is "&f[&6총&f] &e리볼버 &7-&6 PG43":
+            if player has 1 arrow:
+                play sound "minecraft:entity.firework_rocket.blast" at volume 100 and pitch 2 to player from player's location
+                shoot a arrow from the player with speed 2
+                set {_loc} to player's location
+                add -6 to {_loc}'s pitch
+                teleport player to {_loc}
+                remove 1 of arrow from player's inventory
+                send action bar "&f[&6총알&f] &a%amount of arrow in player's inventory%&f발" to sender
+                wait 1 tick
+            else:
+                send action bar "&f[&6총알&f] &c%amount of arrow in player's inventory%&f발" to sender
+        else if name of player's tool is "&f[&6총&f] &e소총 &7-&6 AK74":
+            if player has 1 arrow:
+                play sound "minecraft:entity.firework_rocket.blast" at volume 100 and pitch 0.1 to player from player's location
+                shoot a arrow from the player with speed 4
+                set {_loc} to player's location
+                add -2 to {_loc}'s pitch
+                teleport player to {_loc}
+                remove 1 of arrow from player's inventory
+                send action bar "&f[&6총알&f] &a%amount of arrow in player's inventory%&f발" to sender
+                wait 1 tick
+            else:
+                send action bar "&f[&6총알&f] &c%amount of arrow in player's inventory%&f발" to sender
+        else if name of player's tool is "&f[&6총&f] &e기관총 &7-&c M2":
+            add 1 to player's pitch
+            loop 5 times:
+                if player has 1 arrow:
+                    play sound "minecraft:entity.firework_rocket.blast" at volume 100 and pitch 0.1 to player from player's location
+                    shoot arrow from player with speed 4
+                    set {_loc} to player's location
+                    add -0.6 to {_loc}'s pitch
+                    teleport player to {_loc}
+                    remove 1 of arrow from player's inventory
+                    send action bar "&f[&6총알&f] &a%amount of arrow in player's inventory%&f발" to sender
+                    wait 1 tick
+                else:
+                    send action bar "&f[&6총알&f] &c%amount of arrow in player's inventory%&f발" to sender
+                    stop loop
+
+

@@ -1,0 +1,131 @@
+on right click on barrier:
+    if {음식제작대대기타임} is true:
+        send "&f[&c제작대&f] &c제작대 항목 대기 중입니다. 잠시 뒤 재시도 해주세요!" to player
+    else:
+        if "%location of event-block%" contains "x: -11.5, y: 78.5, z: -96.5" and "in 'lobby'":
+            set {음식제작대대기타임} to true
+            send action bar "&f[&a제작대&f] &7제작대 로딩 중... &7( 시간이 소요됩니다. )" to player
+            open chest with 6 rows named "&fɮ  &c&l음식 제작대  &fɮ" to player
+            loop {음식제작대::*}:
+                set {_slot} to loop-index parsed as number
+                set {_제작법} to "%{음식제작물품::%{_slot}%::*}%"
+                if {_제작법} contains "named":
+                    loop {음식제작물품::%{_slot}%::*}:
+                        if "%loop-value-2%" contains "named":
+                            replace all "%loop-value-2%" with "%name of loop-value-2%" in {_제작법}
+                replace all ", 0 air", " and 0 air" with "" in {_제작법}
+                replace all ", " with "%nl%&cㅣ &7아이템: &6" in {_제작법}
+                replace all " and " with "%nl%&cㅣ &7아이템: &6" in {_제작법}
+                set slot {_slot} of current inventory of player to loop-value with lore "&6------- &e[ 제작법 ]&6 -------" and "&cㅣ &7아이템: &a%{_제작법}%" and "&c주의: 인벤토리에 공간이 있어야 합니다!"
+                wait 1 tick
+            send action bar "&f[&a제작대&f] &7제작대 로딩이 완료되었습니다." to player
+        
+
+on inventory click:
+    if inventory name contains "&c&l음식 제작대":
+        cancel event
+        if event-slot is air:
+            play sound "minecraft:ui.button.click" to player
+        else if lore of event-slot contains "&6------- &e[ 제작법 ]&6 -------":
+            if {음식제작물품::%index of event-slot%::*} is not set:
+                send "&f[&c제작대&f] 해당 아이템은 제작법이 없습니다." to sender
+            else:
+                set {_아이템개수} to 0
+                loop {음식제작물품::%index of event-slot%::*}:
+                    if loop-value is not air:
+                        add 1 to {_아이템개수}
+                        if player has {음식제작물품::%index of event-slot%::%loop-index%}:
+                            add 1 to {_있는아이템}
+
+                if {_아이템개수} is {_있는아이템}:
+                    loop {음식제작물품::%index of event-slot%::*}:
+                        if loop-value is not air:
+                            if player has {음식제작물품::%index of event-slot%::%loop-index%}:
+                                remove {음식제작물품::%index of event-slot%::%loop-index%} from player's inventory
+                            else:
+                                set {_오류} to 403
+                    if {_오류} is 403:
+                        send "&f[&c오류&f] 계산 중에 아이템이 사라져서 드릴 수 없어요!" to sender
+                    else:
+                        give {음식제작대::%index of event-slot%} to player
+                        play sound "minecraft:block.enchantment_table.use" to player
+                        send title "ɮ" with subtitle "&a아이템을 성공적으로 요리했습니다!" to player
+                else:
+                    send "&f[&c제작대&f] 아이템이 부족합니다!" to sender
+            
+    if inventory name contains "&6&l음식 제작대 제작설정":
+        cancel event
+        if event-slot is air:
+            play sound "minecraft:ui.button.click" to player
+        else:
+            close player's inventory
+            wait 1 tick
+            open chest with 1 rows named "&fɮ  &6&l음식 제작대 가격설정 &7- %index of event-slot%  &fɮ" to player
+            loop {음식제작물품::%index of event-slot%::*}:
+                set {_slot} to loop-index parsed as number
+                set slot {_slot} of current inventory of player to loop-value
+
+
+
+command /음식제작대설정:
+    trigger:
+        if player is op:
+            open chest with 6 rows named "&fɮ  &6&l음식 제작대 설정  &fɮ" to player
+            loop {음식제작대::*}:
+                set {_slot} to loop-index parsed as number
+                set slot {_slot} of current inventory of player to loop-value
+            send "&f[&a제작대&f] 음식 제작대 설정 창이 생성되었습니다." to sender
+            stop
+        else:
+            stop
+
+command /음식제작대제작설정:
+    trigger:
+        if player is op:
+            open chest with 6 rows named "&fɮ  &6&l음식 제작대 제작설정  &7- 설정할 아이템 클릭하여 설정  &fɮ" to player
+            loop {음식제작대::*}:
+                set {_slot} to loop-index parsed as number
+                set slot {_slot} of current inventory of player to loop-value
+            send "&f[&a제작대&f] 음식 제작대 설정 창이 생성되었습니다." to sender
+            stop
+        else:
+            stop
+
+
+
+on inventory close:
+    if name of player's current inventory contains "&c&l음식 제작대":
+        send "&f[&c제작대&f] &b5&f초 동안 음식 제작대를 열 수 없습니다!" to player
+        wait 5 seconds
+        delete {음식제작대대기타임} 
+        send "&f[&e제작대&f] &a이제 음식 제작대를 열 수 있습니다!" to player
+    if name of player's current inventory contains "&6&l음식 제작대 설정":
+        send "&f[&a제작대&f] &a제작대를 설정하고 있습니다." to player
+        set {_n} to 0
+        loop 54 times:
+            set {음식제작대::%{_n}%} to slot {_n} of player's current inventory
+            add 1 to {_n}
+            send action bar "&fɮ  &6&l음식 제작대 설정중... &7%{_n}%  &fɮ"
+        send "&f[&a제작대&f] &a제작대를 설정 완료!" to player
+        send action bar "&fɮ  &6&l음식 제작대 설정완료...  &fɮ"
+
+    if name of player's current inventory contains "&6&l음식 제작대 가격설정 &7-":
+        set {_name} to name of player's current inventory
+        set {_name} to uncolored {_name}
+        replace all "음식", "제작대", "가격설정", "ɮ", "-" and " " with "" in {_name}
+        set {_name} to {_name} parsed as integer
+        send "&f[&a제작대&f] &a제작대를 설정하고 있습니다." to player
+        set {_n} to 0
+        if {_name} is not set:
+            delete {음식제작물품::%{_name}%::*}
+            delete {음식제작물품::%{_name}%}
+            send "&f[&a제작대&f] &c제작대를 설정 실패." to player
+            send action bar "&fɮ  &c&l음식 제작대 설정실패...  &fɮ"
+        else:
+            loop 9 times:
+                set {음식제작물품::%{_name}%::%{_n}%} to slot {_n} of player's current inventory
+                add 1 to {_n}
+                send action bar "&fɮ  &6&l음식 제작대 가격설정중... &7%{_n}%  &fɮ"
+            send "&f[&a제작대&f] &a제작대를 설정 완료! &7(%{_name}%)" to player
+            send action bar "&fɮ  &6&l음식 제작대 설정완료...  &fɮ"
+

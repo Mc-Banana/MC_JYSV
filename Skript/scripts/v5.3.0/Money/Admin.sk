@@ -1,0 +1,60 @@
+command /돈 [<text>] [<offlineplayer>] [<number>]:
+    trigger:
+        if sender is op:
+            if arg-1 or arg-2 or arg-3 is set:
+                if arg-1 is "추가":
+                    add arg-3 to {돈::%uuid of arg-2%}
+                    send "&6| &f%arg-2% 님에게 &b%Unit(arg-3)% &f달러를 지급했습니다." to sender and console
+                else if arg-1 is "차감":
+                    subtract arg-3 from {돈::%uuid of arg-2%}
+                    send "&6| &f%arg-2% 님에게 &b%Unit(arg-3)% &f달러를 차감했습니다." to sender and console
+                else if arg-1 is "설정":
+                    set {돈::%uuid of arg-2%} to arg-3
+                    send "&6| &f%arg-2% 님에게 &b%Unit(arg-3)% &f달러를 설정했습니다." to sender and console
+                else if arg-1 is "초기화":
+                    set {돈::%uuid of arg-2%} to 0
+                    send "&6| &f%arg-2% 님의 돈을 &b0&f달러으로 초기화 했습니다." to sender and console
+                    send "&c&l| &f관리자 &b%player% &f께서 당신의 돈을 초기화 했습니다!" to arg-2
+                else if arg-1 is "보기":
+                    send "&e&l| &f%arg-2% 님의 돈은 &b%Unit({돈::%uuid of arg-2%})% &f달러 입니다." to sender
+
+            else:
+                send "&c&l| &f올바른 사용법 &7:: &b/돈 &f<타입> <플레이어> <금액>" to sender
+                
+        else:
+            send "&c&l| &fOP 만 사용 가능한 명령어 입니다." to sender
+            stop
+
+on tab complete of "/돈":
+    set tab completions for position 1 to "추가", "차감", "설정", "초기화" and "보기"
+
+
+command /코인 [<text>] [<offlineplayer>] [<number>]:
+    trigger:
+        if sender is op:
+            if arg-1 or arg-2 or arg-3 is set:
+                if arg-1 is "추가":
+                    add arg-3 to {코인::%uuid of arg-2%}
+                    send "&6| &f%arg-2% 님에게 &b%Unit(arg-3)% &f코인을 지급했습니다." to sender and console
+                else if arg-1 is "차감":
+                    subtract arg-3 from {코인::%uuid of arg-2%}
+                    send "&6| &f%arg-2% 님에게 &b%Unit(arg-3)% &f코인을 차감했습니다." to sender and console
+                else if arg-1 is "설정":
+                    set {코인::%uuid of arg-2%} to arg-3
+                    send "&6| &f%arg-2% 님에게 &b%Unit(arg-3)% &f코인을 설정했습니다." to sender and console
+                else if arg-1 is "초기화":
+                    set {코인::%uuid of arg-2%} to 0
+                    send "&6| &f%arg-2% 님의 코인을 &b0&f코인으로 초기화 했습니다." to sender and console
+                    send "&c&l| &f관리자 &b%player% &f께서 당신의 코인을 초기화 했습니다!" to arg-2
+                else if arg-1 is "보기":
+                    send "&e&l| &f%arg-2% 님의 돈은 &b%Unit({코인::%uuid of arg-2%})% &f코인 입니다." to sender
+
+            else:
+                send "&c&l| &f올바른 사용법 &7:: &b/코인 &f<타입> <플레이어> <금액>" to sender
+                
+        else:
+            send "&c&l| &fOP 만 사용 가능한 명령어 입니다." to sender
+            stop
+
+on tab complete of "/코인":
+    set tab completions for position 1 to "추가", "차감", "설정", "초기화" and "보기"

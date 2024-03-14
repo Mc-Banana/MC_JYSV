@@ -1,0 +1,40 @@
+every 2 seconds:
+    if tps from last 1m > 20:
+        set {서버뷰어::TPS} to "&a&n20&r&a*&r"
+    else if tps from last 1m > 19.8:
+        set {서버뷰어::TPS} to "&a&n%tps from last 1m%&r"
+    else if tps from last 1m > 19:
+        set {서버뷰어::TPS} to "&a%tps from last 1m%&r"
+    else if tps from last 1m > 18.4:
+        set {서버뷰어::TPS} to "&e%tps from last 1m%&r"
+    else if tps from last 1m > 17:
+        set {서버뷰어::TPS} to "&6%tps from last 1m%&r"
+    else if tps from last 1m > 16.5:
+        set {서버뷰어::TPS} to "&c%tps from last 1m%&r"
+    else if tps from last 1m > 16:
+        set {서버뷰어::TPS} to "&c&l&n%tps from last 1m%&r"
+    else if tps from last 1m < 16:
+        set {서버뷰어::TPS} to "&4&n%tps from last 1m%&r"
+    else:
+        set {서버뷰어::TPS} to "&7&o%tps from last 1m%&r"
+
+
+on join:
+    while player is online:
+        if player's ping < 10:
+            set {서버뷰어::PING::%player%} to "&a&n%player's ping%&r"
+        else if player's ping < 30:
+            set {서버뷰어::PING::%player%} to "&a%player's ping%&r"
+        else if player's ping < 50:
+            set {서버뷰어::PING::%player%} to "&e%player's ping%&r"
+        else if player's ping < 100:
+            set {서버뷰어::PING::%player%} to "&6%player's ping%&r"
+        else if player's ping < 500:
+            set {서버뷰어::PING::%player%} to "&c%player's ping%&r"
+        else if player's ping > 500:
+            set {서버뷰어::PING::%player%} to "&c&n%player's ping%&r"
+        wait 1 seconds
+
+
+on quit:
+    delete {서버뷰어::PING::%player%}

@@ -1,0 +1,45 @@
+every 2 seconds:
+    loop all players:
+        if {Playtime::%uuid of loop-player%}/3600 < 1:
+            set {PlaytimeUnit::%uuid of loop-player%} to "&7%{Playtime::%uuid of loop-player%}/3600%"
+        else if {Playtime::%uuid of loop-player%}/3600 < 5:
+            set {PlaytimeUnit::%uuid of loop-player%} to  "&6%{Playtime::%uuid of loop-player%}/3600%"
+        else if {Playtime::%uuid of loop-player%}/3600 < 15:
+            set {PlaytimeUnit::%uuid of loop-player%} to  "&e%{Playtime::%uuid of loop-player%}/3600%"
+        else if {Playtime::%uuid of loop-player%}/3600 < 30:
+            set {PlaytimeUnit::%uuid of loop-player%} to  "&c%{Playtime::%uuid of loop-player%}/3600%"
+        else if {Playtime::%uuid of loop-player%}/3600 < 50:
+            set {PlaytimeUnit::%uuid of loop-player%} to  "&4%{Playtime::%uuid of loop-player%}/3600%"
+        else if {Playtime::%uuid of loop-player%}/3600 < 75:
+            set {PlaytimeUnit::%uuid of loop-player%} to  "&d%{Playtime::%uuid of loop-player%}/3600%"
+        else if {Playtime::%uuid of loop-player%}/3600 < 100:
+            set {PlaytimeUnit::%uuid of loop-player%} to  "&f%{Playtime::%uuid of loop-player%}/3600%"
+        else if {Playtime::%uuid of loop-player%}/3600 < 200:
+            set {PlaytimeUnit::%uuid of loop-player%} to  "&2✪ %{Playtime::%uuid of loop-player%}/3600%"
+        else if {Playtime::%uuid of loop-player%}/3600 < 225:
+            set {PlaytimeUnit::%uuid of loop-player%} to  "&2✪ <##0080FF>%{Playtime::%uuid of loop-player%}/3600%"
+        else if {Playtime::%uuid of loop-player%}/3600 < 300:
+            set {PlaytimeUnit::%uuid of loop-player%} to  "&2✪ &b%{Playtime::%uuid of loop-player%}/3600%"
+        else if {Playtime::%uuid of loop-player%}/3600 < 400:
+            set {PlaytimeUnit::%uuid of loop-player%} to  "&6✪ &e&l&n%{Playtime::%uuid of loop-player%}/3600%"
+        else if {Playtime::%uuid of loop-player%}/3600 < 450:
+            set {PlaytimeUnit::%uuid of loop-player%} to  "&6&l⚡ &a&l%{Playtime::%uuid of loop-player%}/3600%&a&l"
+        else if {Playtime::%uuid of loop-player%}/3600 < 500:
+            set {PlaytimeUnit::%uuid of loop-player%} to  "&c&l❤ &4&l%{Playtime::%uuid of loop-player%}/3600%&c&l"
+        else if {Playtime::%uuid of loop-player%}/3600 < 600:
+            set {PlaytimeUnit::%uuid of loop-player%} to "&c&l❤ &4&l%{Playtime::%uuid of loop-player%}/3600%&c&l"
+        else if {Playtime::%uuid of loop-player%}/3600 < 700:
+            set {PlaytimeUnit::%uuid of loop-player%} to "&c&l❤ &4&l%{Playtime::%uuid of loop-player%}/3600%&c&l"
+        else:
+            set {PlaytimeUnit::%uuid of loop-player%} to "&4&l계산불가"
+            send action bar "&b%loop-player% 님의 플레이 타임 계산이 수치가 너무 높습니다!" to all players
+
+every 1 seconds:
+    loop all players:
+        add 1 to {Playtime::%uuid of loop-player%}
+
+command /playtimeup [<integer>] [<offlineplayer>]:
+    trigger:
+        if sender is op:
+            add arg-1 to {Playtime::%uuid of arg-2%}
+            send "&f[&6Playtime&f] %arg-2% has playtime up to &a%arg-1%&f!" to sender

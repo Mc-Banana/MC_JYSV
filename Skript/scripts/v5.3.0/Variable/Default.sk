@@ -1,0 +1,28 @@
+on join:
+    execute player command "변수세팅"
+
+command /변수세팅:
+    trigger:
+        set {_n} to 0
+        if {돈::%uuid of player%} is not set:
+            set {돈::%uuid of player%} to 0
+            add 1 to {_n}
+        if {돈::%uuid of player%} < 0:
+            set {돈::%uuid of player%} to 0
+            add 1 to {_n}
+        if {랭크::%uuid of player%} is not set:
+            set {랭크::%uuid of player%} to "&7Default"
+            add 1 to {_n}
+        if {코인::%uuid of player%} is not set:
+            set {코인::%uuid of player%} to 0
+            add 1 to {_n}
+        if {Playtime.%uuid of player%} is set:
+            set {Playtime::%uuid of player%} to {Playtime.%uuid of player%}
+            delete {Playtime.%uuid of player%} and {PlaytimeUnit.%uuid of player%}
+        if {Playtime::%uuid of player%} is not set:
+            set {Playtime::%uuid of player%} to 0
+        send action bar "&c플레이어의 오류 세팅이 &b%{_n}% &c개가 복원됨." to player
+        
+on load:
+    loop all players:
+        execute loop-player command "변수세팅"

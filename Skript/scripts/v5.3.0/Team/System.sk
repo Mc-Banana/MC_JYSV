@@ -1,0 +1,881 @@
+options:
+    prefix: &f[&6국가&f]
+    error: &f[&c오류&f]
+
+
+command /국가 [<text>] [<text>]:
+    trigger:
+        if arg-1 is "생성":
+            if "%player's world%" doesn't contain "world":
+                send "{@prefix} &c해당 명령어는 오버월드에서만 작동합니다." to player
+                stop
+            else if {국가::생성권} is not set:
+                send "{@prefix} &c현재 서버 내 설정 된 생성권이 없습니다. 관리진에게 문의하십시오." to player
+                stop
+            else if player's tool is not {국가::생성권}:
+                send "{@prefix} &b국가 생성권 &f을 &b메인 손&f에 들고 있어야 합니다." to player
+                send "{@prefix} &b국가 생성권 &f을 &B메인 손&f에 들고 다시 시도해주세요." to player
+                stop
+            else if {국가가입::%uuid of player%} is set:
+                send "{@prefix} &c현재 다른 국가에 가입 되어 있습니다. %nl%{@prefix} &c국가를 탈퇴한 후 다시 시도해주십시오." to player
+                stop
+            else if player is not set:
+                send "{@prefix} &c당신의 플레이어 정보를 확인하지 못하였습니다. 재접속 해주시기 바랍니다." to player
+            else if {국가::목록::%arg-2%} is set:
+                send "{@prefix} &c이미 같은 이름으로 생성 된 국가가 있습니다. 다른 국가를 시도해주세요.%nl%{@prefix} &7국가 &b%arg-2%_%random integer between 1 and 99% &7는 어떤가요?" to sender
+            else if length of arg-2 > 5:
+                send "{@prefix} &b6&c글자 이상으로는 국가를 생성할 수 없습니다!" to sender
+            else if arg-2 is not set:
+                send "{@prefix} &c국가 이름을 설정해주세요." to sender
+            else:
+                set {국가::코어설치감지::%player%::메인코어} to 5
+                give 1 crying obsidian named "&e&l메인 코어" with lore "&7원하는 자리에 코어를 설치해주세요!" to player
+                while {국가::코어설치감지::%player%::메인코어} > 0:
+                    subtract 1 from {국가::코어설치감지::%player%::메인코어}
+                    send action bar "&e국가 생성을 위해 &a코어&e를 설치해주세요. &b%{국가::코어설치감지::%player%::메인코어}%&f초에도 미설치 시 국가가 삭제됩니다." to player
+                    wait 1 seconds
+                if {국가::코어설치감지::%player%::메인코어} is 0:
+                    delete {국가::코어설치감지::%player%::메인코어}
+                    send "{@prefix} &c코어가 설치되지 않았습니다." to player
+                else:
+                    set {_loc} to {국가::코어설치감지::%player%::메인코어}
+                    delete {국가::코어설치감지::%player%::메인코어}
+                    remove {국가::생성권} from player's inventory
+                    set {국가::목록::%arg-2%} to uuid of player
+                    set {국가::국가장::%arg-2%} to uuid of player
+                    set {국가::국가원::%arg-2%::%uuid of player%} to uuid of player
+                    set {국가::국가잔고::%arg-2%} to 0
+                    set {국가::홍보쿨타임::%arg-2%} to 0
+                    set {국가::코어::%arg-2%::1} to {_loc}
+                    set {국가::로그::%arg-2%::1} to "&7[%now formatted as "HH:mm:ss"%] &a국가가 생성되었습니다. &7By %player%"
+                    set {국가가입::%uuid of player%} to arg-2
+                    set {코어::%{_loc}%} to arg-2
+                    set {국가::국가창고::%arg-2%} to "없음"
+                    send "{@prefix} &a국가가 생성되었습니다." to player
+                    
+
+                remove 1 of crying obsidian named "&e&l메인 코어" with lore "&7원하는 자리에 코어를 설치해주세요!" from player's inventory
+        else if arg-1 is "해체":
+            if {국가::목록::%{국가가입::%uuid of player%}%} is uuid of player:
+                if {국가::국가장::%{국가가입::%uuid of player%}%} is uuid of player:
+                    send "{@prefix} &e국가를 해체하고 있습니다..." to player
+                    set {_n} to {국가가입::%uuid of player%}
+                    loop {국가::국가원::%{_n}%::*}:
+                        delete {국가::국가원::%{_n}%::%loop-index%}
+                        delete {국가가입::%loop-index%}
+                    delete {국가::목록::%{_n}%} and {국가::국가장::%{_n}%}
+                    delete {국가::국가잔고::%{_n}%}
+                    delete {국가::로그::%{_n}%::*}
+                    delete {국가::로그::%{_n}%}
+                    delete {국가::홍보쿨타임::%{_n}%}
+                    delete {국가::국가스폰::%{_n}%}
+                    delete {국가::국가창고::%{_n}%} and {국가::국가창고::%{_n}%::*}
+
+                    #코어 삭제 
+                    delete {코어::%{국가::코어::%{_n}%::1}%}
+                    set block at {국가::코어::%{_n}%::1} to air
+                    delete {국가::코어::%{_n}%}
+                    send "{@prefix} &a국가를 해체하였습니다." to player
+                else:
+                    send "{@prefix} &6국가를 자신이 만들어도 국가장만 해체할 수 있습니다." to player
+            else:
+                send "{@prefix} &6국가장만 해당 국가를 해체할 수 있습니다." to player
+
+        else if arg-1 is "공지":
+            set {_text} to arg-2
+            if {국가가입::%uuid of player%} is not set:
+                send "{@prefix} &6국가 공지를 하기 위해선 국가를 생성하거나 가입해야합니다." to player
+            else if {국가::국가장::%{국가가입::%uuid of player%}%} is not uuid of player:
+                send "{@prefix} &6국가 공지를 위해선 국가장이 되어야 합니다." to player
+            else if arg-2 is not set:
+                send "{@prefix} &c국가 공지 메시지를 적지 않았습니다." to player
+            else:
+                send "{@prefix} &a국가 공지를 업로드하였습니다." to player
+                loop {국가::국가원::%{국가가입::%uuid of player%}%::*}:
+                    set {_index} to loop-index
+                    set {_index} to {_index} parsed as player
+                    set {_index} to name of {_index}
+                    play sound "minecraft:block.note_block.bit" to {_index} parsed as player
+                    send " %nl%&f[&c&l국가공지&r&f] %arg-2% %nl% " to {_index} parsed as player
+                
+
+        else if arg-1 is "초대":
+            set {_n125} to arg-2 parsed as player
+            if arg-2 parsed as player is not set:
+                send "{@prefix} &6해당 플레이어는 오프라인 상태입니다." to player
+                send "{@prefix} &7명령어 방법: /국가 초대 &b온라인 플레이어" to player
+                stop
+            else if {국가가입::%uuid of player%} is not set:
+                send "{@prefix} &6국가 초대를 위해선 국가에 가입하셔야 합니다." to player
+            else if {국가::국가장::%{국가가입::%uuid of player%}%} is not uuid of player:
+                send "{@prefix} &6국가 초대를 위해선 국가장이 되어야 합니다." to player
+            else if {국가가입::%uuid of {_n125}%} is {국가가입::%uuid of player%}:
+                send "{@prefix} &c해당 플레이어는 국가원입니다!" to player
+
+            else:
+                send "{@prefix} &e초대장을 보냈습니다." to player
+                set {국가초대::%arg-2 parsed as player%} to 15
+                play sound "minecraft:block.note_block.bell" to arg-2 parsed as player
+                send "{@prefix} &b%{국가가입::%uuid of player%}% &e국가 초대장을 받으셨습니다." to arg-2 parsed as player 
+                send "{@prefix} <ttp:&a클릭 시 해당 국가에 가입합니다.><cmd:/국가 수락>&a[국가 가입]<reset> <ttp:&c클릭 시 해당 국가 가입을 거부합니다.><cmd:/국가 거부>&c[가입 거부]<reset>" to arg-2 parsed as player 
+                while {국가초대::%arg-2 parsed as player%} > 0:
+                    subtract 1 from {국가초대::%arg-2 parsed as player%}
+                    wait 1 seconds
+                if {국가초대::%arg-2 parsed as player%} is 0:
+                    send "{@prefix} &6국가 초대장을 보낸 결과 무응답으로 취소되었습니다." to player
+                else if {국가초대::%arg-2 parsed as player%} is -11:
+                    send "{@prefix} &6초대장을 보낸 해당 플레이어가 게임을 나가 취소되었습니다." to player
+                else if {국가초대::%arg-2 parsed as player%} is -15:
+                    send "{@prefix} &b%arg-2 parsed as player% &a가 국가 가입을 받았습니다!" to player
+                    set {_n} to arg-2 parsed as player
+                    set {국가가입::%uuid of {_n}%} to {국가가입::%uuid of player%}
+                    set {국가::국가원::%{국가가입::%uuid of player%}%::%uuid of {_n}%} to uuid of player
+                    wait 1 tick
+                    loop {국가::국가원::%{국가가입::%uuid of player%}%::*}:
+                        set {_index} to loop-index
+                        set {_index} to {_index} parsed as player
+                        set {_index} to name of {_index}
+                        send "{@prefix} &b%arg-2 parsed as player% &e님께서 국가에 들어오셨어요!" to {_index} parsed as player
+                    set {_n} to number of {국가::로그::%{국가가입::%uuid of player%}%::*}
+                    set {국가::로그::%{국가가입::%uuid of player%}%::%{_n}+1%} to "&7[%now formatted as "HH:mm:ss"%] &a%arg-2 parsed as player% &7님께서 국가에 가입하셨습니다."
+                else if {국가초대::%arg-2 parsed as player%} is -16:
+                    send "{@prefix} &6초대장을 보낸 플레이어가 국가 가입을 거절하였습니다." to player
+                else:
+                    send "{@prefix} &cUnknown Error: &7Code %{국가초대::%arg-2 parsed as player%}%" to player
+                delete {국가초대::%arg-2 parsed as player%}
+
+        else if arg-1 is "탈퇴":
+            if {국가가입::%uuid of player%} is not set:
+                send "{@prefix} &c당신은 국가에 가입하지 않았습니다!" to player
+                stop
+            else if {국가::국가장::%{국가가입::%uuid of player%}%} is uuid of player:
+                send "{@prefix} &c국가장은 탈퇴할 수 없습니다." to player
+            else:
+                delete {국가::국가원::%{국가가입::%uuid of player%}%::%uuid of player%}
+                wait 1 tick
+                loop {국가::국가원::%{국가가입::%uuid of player%}%::*}:
+                    set {_index} to loop-index
+                    set {_index} to {_index} parsed as player
+                    set {_index} to name of {_index}
+                    send "{@prefix} &b%player% &e님께서 국가를 나가셨습니다" to {_index} parsed as player
+                set {_n} to number of {국가::로그::%{국가가입::%uuid of player%}%::*}
+                set {국가::로그::%{국가가입::%uuid of player%}%::%{_n}+1%} to "&7[%now formatted as "HH:mm:ss"%] &a%player% &7님이 국가를 나가셨습니다."
+                delete {국가가입::%uuid of player%}
+                delete {국가채팅::%uuid of player%}
+                send "{@prefix} &a성공적으로 국가를 탈퇴했습니다." to player
+
+        else if arg-1 is "추방":
+            if arg-2 parsed as player is set:
+                set {_p} to arg-2 parsed as offline player
+            else:
+                set {_p} to arg-2 parsed as offline player
+            if {국가가입::%uuid of player%} is not set:
+                send "{@prefix} &c당신은 국가에 가입하지 않았습니다!" to player
+                stop
+            else if {국가::국가장::%{국가가입::%uuid of player%}%} is not uuid of player:
+                send "{@prefix} &c국가장만 추방 할 수 있습니다." to player
+            else if {국가가입::%uuid of {_p}%} is not {국가가입::%uuid of player%}:
+                send "{@prefix} &6해당 플레이어는 당신의 국가에 가입하지 않았습니다." to sender
+            else if {_p} is player:
+                send "{@prefix} &6자기 자신을 추방할 순 없습니다!" to sender
+            else:
+                delete {국가::국가원::%{국가가입::%uuid of {_p}%}%::%uuid of {_p}%}
+                delete {국가가입::%uuid of {_p}%}
+                send "{@prefix} &a성공적으로 해당 플레이어를 강제추방 하였습니다." to sender
+
+        else if arg-1 is "양도":
+            if arg-2 parsed as player is set:
+                set {_p} to arg-2 parsed as offline player
+            else:
+                set {_p} to arg-2 parsed as offline player
+            if {국가가입::%uuid of player%} is not set:
+                send "{@prefix} &c당신은 국가에 가입하지 않았습니다!" to player
+                stop
+            else if {국가::국가장::%{국가가입::%uuid of player%}%} is not uuid of player:
+                send "{@prefix} &c국가장만 국가장 자리를 양도 할 수 있습니다." to player
+            else if {국가가입::%uuid of {_p}%} is not {국가가입::%uuid of player%}:
+                send "{@prefix} &6해당 플레이어는 당신의 국가에 가입하지 않았습니다." to sender
+            else if {_p} is player:
+                send "{@prefix} &6자기 자신에게 양도를 할 순 없어요!" to sender
+            else:
+                delete {국가::국가장::%{국가가입::%uuid of player%}%}
+                send "{@prefix} &e양도 대기 순서... &71" to sender
+                wait 5 tick
+                set {국가::국가장::%{국가가입::%uuid of player%}%} to uuid of {_p}
+                send "{@prefix} &a성공적으로 해당 플레이어를 국가장으로 임명했습니다!" to sender
+                loop {국가::국가원::%{국가가입::%uuid of player%}%::*}:
+                    set {_index} to loop-index
+                    set {_index} to {_index} parsed as player
+                    set {_index} to name of {_index}
+                    send "{@prefix} &6국가장 %player% &f님께서 &b%arg-2%&f님께 국가장을 양도했습니다." to {_index} parsed as player
+                set {_n} to number of {국가::로그::%{국가가입::%uuid of player%}%::*}
+                set {국가::로그::%{국가가입::%uuid of player%}%::%{_n}+1%} to "&7[%now formatted as "HH:mm:ss"%] &6국가장 %player% &f님께서 &b%arg-2% &f님께 국가장을 양도했습니다."
+
+        else if arg-1 is "로그":
+            if {국가가입::%uuid of player%} is not set:
+                send "{@prefix} &c국가에 가입하셔야 해당 기능을 사용할 수 있습니다." to player
+            else:
+                if arg-2 is not set:
+                    send " &f----- <##5858FA>Nation Log &f----- &7( 검색 국가: <##5858FA>##%{국가가입::%uuid of player%}% &7)" to player
+                    set {_lognumber} to number of {국가::로그::%{국가가입::%uuid of player%}%::*}
+                    set {_maxpage} to number of {국가::로그::%{국가가입::%uuid of player%}%::*}
+                    set {_maxpage} to ceil({_maxpage}/5)
+                    set {_page} to 1
+                    if {_lognumber} is set:
+                        set {_n} to (5*{_page})-4
+                        loop 5 times:
+                            if {국가::로그::%{국가가입::%uuid of player%}%::%{_n}%} is not set:
+                                send "  <ttp:&c로그가 생성되지 않았거나 말소됨.>&7[00:00:00] &7로그 데이터 없음 ##%{_n}%<reset>" to player
+                            else:
+                                send "  &f%{국가::로그::%{국가가입::%uuid of player%}%::%{_n}%}%" to player
+                            add 1 to {_n}
+                    else:
+                        send "{@prefix} &e해당 국가의 로그를 찾을 수 없습니다." to player
+                    send "&f-----" to player
+                    set {_memory} to 0
+                    loop {국가::로그::%{국가가입::%uuid of player%}%::*}:
+                        set {_integer} to length of {국가::로그::%{국가가입::%uuid of player%}%::%loop-index%}
+                        add {_integer}*3 to {_memory}
+                    if {_page} > {_maxpage}:
+                        send "<##5858FA> <ttp:&a/국가 로그 &b페이지 &7를 입력해 페이지를 바꿀 수 있습니다.>Page &6%{_page}%&f/%{_maxpage}%<reset>  &f|| &7(Log Memory: %Unit({_memory}/1024)% KB)" to player
+                    else:
+                        send "<##5858FA> <ttp:&a/국가 로그 &b페이지 &7를 입력해 페이지를 바꿀 수 있습니다.>Page &f%{_page}%&f/%{_maxpage}%<reset>  &f|| &7(Log Memory: %Unit({_memory}/1024)% KB)" to player
+
+                else:
+                    send " &f----- <##5858FA>Nation Log &f----- &7( 검색 국가: <##5858FA>##%{국가가입::%uuid of player%}% &7)" to player
+                    set {_lognumber} to number of {국가::로그::%{국가가입::%uuid of player%}%::*}
+                    set {_maxpage} to number of {국가::로그::%{국가가입::%uuid of player%}%::*}
+                    set {_maxpage} to ceil({_maxpage}/5)
+                    set {_page} to arg-2 parsed as integer
+                    if {_lognumber} is set:
+                        set {_n} to (5*{_page})-4
+                        loop 5 times:
+                            if {국가::로그::%{국가가입::%uuid of player%}%::%{_n}%} is not set:
+                                send "  <ttp:&c로그가 생성되지 않았거나 말소됨.>&7[00:00:00] &7로그 데이터 없음 ##%{_n}%<reset>" to player
+                            else:
+                                send "  &f%{국가::로그::%{국가가입::%uuid of player%}%::%{_n}%}%" to player
+                            add 1 to {_n}
+                    else:
+                        send "{@prefix} &e해당 국가의 로그를 찾을 수 없습니다." to player
+                    send "&f-----" to player
+                    set {_memory} to 0
+                    loop {국가::로그::%{국가가입::%uuid of player%}%::*}:
+                        set {_integer} to length of {국가::로그::%{국가가입::%uuid of player%}%::%loop-index%}
+                        add {_integer}*3 to {_memory}
+                    if {_page} > {_maxpage}:
+                        send "<##5858FA> <ttp:&a/국가 로그 &b페이지 &7를 입력해 페이지를 바꿀 수 있습니다.>Page &6%{_page}%&f/%{_maxpage}%<reset>  &f|| &7(Log Memory: %Unit({_memory}/1024)% KB)" to player
+                    else:
+                        send "<##5858FA> <ttp:&a/국가 로그 &b페이지 &7를 입력해 페이지를 바꿀 수 있습니다.>Page &f%{_page}%&f/%{_maxpage}%<reset>  &f|| &7(Log Memory: %Unit({_memory}/1024)% KB)" to player
+
+        else if arg-1 is "잔고추가":    
+            if {국가가입::%uuid of player%} is not set:
+                send "{@prefix} &c국가에 가입하셔야 해당 기능을 사용할 수 있습니다." to player
+            else if {돈::%uuid of player%} < arg-2 parsed as number:
+                send "{@prefix} &6보유하고 있는 돈보다 국가잔고를 더 넣을 수 없습니다." to player
+            else if arg-2 is not set:
+                send "{@prefix} &6숫자값이 부족합니다." to player
+            else if arg-2 parsed as number < 0:
+                send "{@prefix} &b0 &6이하로는 입력할 수 없어요!" to player
+            else if arg-2 parsed as number is not set:
+                send "{@prefix} &6숫자만 입력 가능합니다!" to player
+            else:
+                send "{@prefix} &6국가 잔고에 &b%Unit(arg-2 parsed as number)% &f달러를 추가하였습니다." to player
+                add arg-2 parsed as number to {국가::국가잔고::%{국가가입::%uuid of player%}%}
+                subtract arg-2 parsed as number from {돈::%uuid of player%}
+                set {_n} to number of {국가::로그::%{국가가입::%uuid of player%}%::*}
+                set {국가::로그::%{국가가입::%uuid of player%}%::%{_n}+1%} to "&7[%now formatted as "HH:mm:ss"%] &a%player% &f님께서 &b%Unit(arg-2 parsed as number)% &f달러를 국가잔고에 넣으셨습니다."
+                
+        else if arg-1 is "잔고빼기":
+            if {국가가입::%uuid of player%} is not set:
+                send "{@prefix} &c국가에 가입하셔야 해당 기능을 사용할 수 있습니다." to player
+            else if {국가::국가잔고::%{국가가입::%uuid of player%}%} < arg-2 parsed as number:
+                send "{@prefix} &6현재 국가잔고보다 더 많은 양을 뺄 순 없습니다." to player
+            else if {국가::국가장::%{국가가입::%uuid of player%}%} is not uuid of player:
+                send "{@prefix} &6국가장만 국가잔고를 뺄 수 있습니다!" to player
+            else if arg-2 is not set:
+                send "{@prefix} &6숫자값이 부족합니다." to player
+            else if arg-2 parsed as number < 0:
+                send "{@prefix} &b0 &6이하로는 입력할 수 없어요!" to player
+            else if arg-2 parsed as number is not set:
+                send "{@prefix} &6숫자만 입력 가능합니다!" to player
+            else:
+                send "{@prefix} &6국가 잔고에 &b%Unit(arg-2 parsed as number)% &f달러를 가져갔습니다." to player
+                subtract arg-2 parsed as number from {국가::국가잔고::%{국가가입::%uuid of player%}%}
+                add arg-2 parsed as number to {돈::%uuid of player%}
+                set {_n} to number of {국가::로그::%{국가가입::%uuid of player%}%::*}
+                set {국가::로그::%{국가가입::%uuid of player%}%::%{_n}+1%} to "&7[%now formatted as "HH:mm:ss"%] &6국가장 %player% &f님께서 &b%Unit(arg-2 parsed as number)% &f달러를 국가잔고에서 빼셨습니다."
+                
+        else if arg-1 is "채팅":
+            if {국가가입::%uuid of player%} is not set:
+                send "{@prefix} &c국가에 가입하셔야 해당 기능을 사용할 수 있습니다." to player
+            else:
+                if {국가채팅::%uuid of player%} is set:
+                    delete {국가채팅::%uuid of player%}
+                    send "{@prefix} &6국가 채팅을 비활성화 하였습니다!" to player
+                else:
+                    set {국가채팅::%uuid of player%} to true
+                    send "{@prefix} &a국가 채팅을 활성화 하였습니다!" to player
+
+        else if arg-1 is "이자계산":
+            if {국가가입::%uuid of player%} is not set:
+                send "{@prefix} &c국가에 가입하셔야 해당 기능을 사용할 수 있습니다." to player
+            else:
+                send "{@prefix} &6국가 시간당 이자를 계산 중입니다..." to sender
+                set {_imount} to size of {국가::국가원::%{국가가입::%uuid of player%}%::*}
+                set {_money} to {국가::국가잔고::%{국가가입::%uuid of player%}%}
+
+                set {_per} to ({_imount}/10)/{국가::서버::서버세금}
+                if {_per} >= 0.02:
+                    set {_per} to 0.02
+                set {_addper} to {국가::국가잔고::%{국가가입::%uuid of player%}%}+({국가::국가잔고::%{국가가입::%uuid of player%}%}*{_per})
+                send "{@prefix} &f----- <##5858FA>이자 계산 &f----- &7( 검색 국가: <##5858FA>##%{국가가입::%uuid of player%}% &7)" to sender
+                send "{@prefix} <##5858FA>현재 서버 세금 부과: &2%{국가::서버::서버세금}%&a%%" to sender
+                send "{@prefix} <##5858FA>하루 당 증가 퍼센트: &b%{_per}%&1%%" to sender
+                send "{@prefix} <##5858FA>하루 당 증가 값: &2%Unit({국가::국가잔고::%{국가가입::%uuid of player%}%}*{_per})%&a$" to sender
+                send "{@prefix} <##5858FA>총 합 계산값: &2%Unit({_addper})%&a$" to sender
+                send "{@prefix} <##5858FA>본 사항은 예측입니다." to sender
+        else if arg-1 is "세금계산":
+            if {국가가입::%uuid of player%} is not set:
+                send "{@prefix} &c국가에 가입하셔야 해당 기능을 사용할 수 있습니다." to player
+            else:
+                send "{@prefix} &6국가 시간당 세금을 계산 중입니다..." to sender
+                set {_imount} to size of {국가::국가원::%{국가가입::%uuid of player%}%::*}
+                set {_money} to {국가::국가잔고::%{국가가입::%uuid of player%}%}
+
+                set {_per} to ({_imount}/10)/{국가::서버::서버세금}
+                if {_per} >= 0.02:
+                    set {_per} to 0.02
+                set {_addper} to {국가::국가잔고::%{국가가입::%uuid of player%}%}/(100-{국가::서버::서버세금})
+                set {_세금} to ({_money}/({국가::서버::서버세금}*{_imount}))+25000+{_addper}
+                send "{@prefix} &f----- <##5858FA>세금 계산 &f----- &7( 검색 국가: <##5858FA>##%{국가가입::%uuid of player%}% &7)" to sender
+                send "{@prefix} <##5858FA>현재 서버 세금 부과: &2%{국가::서버::서버세금}%&a%%" to sender
+                send "{@prefix} <##5858FA>1일 세금 지출금: &2%Unit({_세금})%&a$" to sender
+                send "{@prefix} <##5858FA>본 사항은 설정 값에 따라 변동됩니다." to sender
+
+                
+        else if arg-1 is "스폰설정":
+            if {국가가입::%uuid of player%} is not set:
+                send "{@prefix} &c국가에 가입하셔야 해당 기능을 사용할 수 있습니다." to player
+            else if {국가::국가장::%{국가가입::%uuid of player%}%} is not uuid of player:
+                send "{@prefix} &6국가장만 국가 스폰을 설정할 수 있습니다!" to player 
+            else:
+                set {국가::국가스폰::%{국가가입::%uuid of player%}%} to player's location
+                send "{@prefix} &a당신의 위치에 국가 스폰을 설정하였습니다!" to player 
+                send "{@prefix} &b/국가 스폰" to player 
+
+        else if arg-1 is "스폰":
+            if {국가가입::%uuid of player%} is not set:
+                send "{@prefix} &c국가에 가입하셔야 해당 기능을 사용할 수 있습니다." to player
+            else if {국가::국가스폰::%{국가가입::%uuid of player%}%} is not set:
+                send "{@prefix} &6국가장이 국가스폰을 설정하지 않았습니다!" to player 
+            else:
+                teleport player at {국가::국가스폰::%{국가가입::%uuid of player%}%}
+                send "{@prefix} &a국가 스폰으로 이동하였습니다!" to player
+
+        else if arg-1 is "홍보":
+            if {국가가입::%uuid of player%} is not set:
+                send "{@prefix} &c국가에 가입하셔야 해당 기능을 사용할 수 있습니다." to player
+            else if {국가::홍보쿨타임::%{국가가입::%uuid of player%}%} > 0:
+                send "{@prefix} &6홍보 쿨타임이 아직 남았습니다!  &b%{국가::홍보쿨타임::%{국가가입::%uuid of player%}%}% Seconds" to player 
+            else:
+                send "{@prefix} &c홍보를 할 수 없습니다." to player
+
+        else if arg-1 is "창고":
+            if {국가가입::%uuid of player%} is not set:
+                send "{@prefix} &c국가에 가입하셔야 해당 기능을 사용할 수 있습니다." to player
+            else if {국가::국가창고::%{국가가입::%uuid of player%}%} is not "없음":
+                send "{@prefix} &b%{국가::국가창고::%{국가가입::%uuid of player%}%}% &e님이 아직 국가창고를 열고 있어 열 수 없습니다." to player 
+            else:
+                set {국가::국가창고::%{국가가입::%uuid of player%}%} to player
+                open chest with 6 rows named "&6&l%{국가가입::%uuid of player%}% &e국가 창고" to player
+                loop {국가::국가창고::%{국가가입::%uuid of player%}%::*}:
+                    set {_slot} to loop-index parsed as number
+                    set slot {_slot} of current inventory of player to loop-value
+
+        else if arg-1 is "세팅-창고":
+            if arg-2 is not set:
+                send "{@prefix} &6국가를 강제가입 하려면 강제가입을 진행할 국가 이름이 있어야 합니다."
+            else if {국가::목록::%arg-2%} is not set:
+                send "{@prefix} &6국가를 강제가입 하려면 강제가입을 진행할 국가가 있어야 하나 해당 이름을 가진 국가는 없습니다."
+            else if sender is op:
+                set {국가::국가창고::%arg-2%} to "없음"
+                send "{@prefix} &b%arg-1% &f국가 세팅 중 &b창고&f 값이 초기화 처리 되었습니다." to sender
+                loop {국가::국가원::%{국가가입::%uuid of player%}%::*}:
+                    set {_index} to loop-index
+                    set {_index} to {_index} parsed as player
+                    set {_index} to name of {_index}
+                    send "{@prefix} &b%arg-1% &f국가 세팅 중 &b창고&f 값이 초기화 처리 되었습니다." to {_index} parsed as player
+                set {_n} to number of {국가::로그::%{국가가입::%uuid of player%}%::*}
+                set {국가::로그::%{국가가입::%uuid of player%}%::%{_n}+1%} to "&7[%now formatted as "HH:mm:ss"%] &b%arg-1% &f국가 세팅 중 &b창고&f 값이 초기화 처리 되었습니다."
+
+            
+                    
+
+
+
+        else if arg-1 is "수락":
+            if {국가초대::%player%} is set:
+                if {국가가입::%uuid of player%} is set:
+                    send "{@prefix} &6당신은 이미 다른 국가에 가입 중입니다." to player
+                    send "{@prefix} &6국가에서 나가려면 &b/국가 탈퇴 &6명령어를 입력하세요." to player
+                else:
+                    set {국가초대::%player%} to -15
+                    send "{@prefix} &6국가 초대에 승인하였습니다. 기다려주세요..." to player
+            else:
+                send "{@prefix} &c당신은 국가 초대 메시지를 받지 않았습니다..." to player
+
+        else if arg-1 is "거부":
+            if {국가초대::%player%} is set:
+                set {국가초대::%player%} to -16
+                send "{@prefix} &6국가 초대에 거부하였습니다..." to player
+            else:
+                send "{@prefix} &c당신은 국가 초대 메시지를 받지 않았습니다..." to player
+
+        else if arg-1 is "정보":
+            if {국가가입::%uuid of player%} is set:
+                set {_n} to {국가::국가장::%{국가가입::%uuid of player%}%}
+                set {_n} to {_n} parsed as player
+                send "{@prefix} &e당신의 국가 정보 &7(&a##%{국가가입::%uuid of player%}%&7) ( 국가장: %name of {_n}% ) &7( 국가원: %number of {국가::국가원::%{국가가입::%uuid of player%}%::*}%명 )" to player
+                loop {국가::국가원::%{국가가입::%uuid of player%}%::*}:
+                    set {_index} to loop-index
+                    set {_index} to {_index} parsed as player
+                    set {_index} to name of {_index}
+                    if {_index} is not set:
+                        set {_index} to loop-index
+                        set {_index} to {_index} parsed as offline player
+                        set {_index} to name of {_index}
+                        send "{@prefix} &e국가원: <ttp:&7해당 플레이어는 오프라인입니다>&7%{_index}%<reset>" to player
+                    else:
+                        send "{@prefix} &e국가원: %{_index}%" to player
+            else:
+                send "{@prefix} &c국가 정보를 조회하지 못했습니다." to player
+
+        else if arg-1 is "목록":
+            send "{@prefix} &6현재 서버 내에 있는 국가는 총 &b%number of {국가::목록::*}% &6개 입니다." to player
+            loop {국가::목록::*}:
+                send "{@prefix} &e- 국가 이름: %loop-index% &7|| &e국가 인원: %number of {국가::국가원::%loop-index%::*}%명" to player
+
+
+
+
+
+        # OP 전용
+        else if arg-1 is "생성권설정":
+            if player is op:
+                if player's tool is air:
+                    send "{@prefix} &c공기 &f는 생성권으로 설정할 수 없습니다." to sender
+                else:
+                    send "{@prefix} &6해당 아이템을 생성권으로 설정하고 있습니다..." to sender
+                    send "{@prefix} &6서버 상태에 따라 지연될 수 있습니다." to sender
+                    set {국가::생성권} to player's tool
+                    send "{@prefix} &a해당 아이템이 국가 생성권으로 설정되었습니다!" to sender
+                    send "{@prefix} &a국가 생성권 소환: &b/국가 생성권지급" to sender
+            else:
+                send "{@error} &c권한이 부족합니다." to sender
+
+        else if arg-1 is "전쟁":
+            if sender is op:
+                if {국가::전쟁선포} is not set:
+                    set {국가::전쟁선포} to true
+                    broadcast "&f[&c전쟁&f] 이제부터 코어 파괴가 가능해집니다!"
+                    send title "&c&l코어 파괴가 가능해집니다!" with subtitle "&e자신의 코어를 지키거나 다른 코어를 파괴하세요!" to all players
+                    broadcast "&f[&c전쟁&f] 상대 코어를 파괴할 경우 국가가 소멸합니다!"
+                    broadcast "&f[&c전쟁&f] 코어가 파괴되지 않게 조심하세요~!"
+                else:
+                    delete {국가::전쟁선포}
+                    broadcast "&f[&c전쟁&f] 이제부터 코어 파괴가 불가능 합니다!"
+                    send title "&c&l전쟁 종료" with subtitle "&a전쟁 타임이 종료되었습니다!" to all players
+            else if sender is console:
+                if {국가::전쟁선포} is not set:
+                    set {국가::전쟁선포} to true
+                    broadcast "&f[&c전쟁&f] 이제부터 코어 파괴가 가능해집니다!"
+                    send title "&c&l코어 파괴가 가능해집니다!" with subtitle "&e자신의 코어를 지키거나 다른 코어를 파괴하세요!" to all players
+                    broadcast "&f[&c전쟁&f] 상대 코어를 파괴할 경우 국가가 소멸합니다!"
+                    broadcast "&f[&c전쟁&f] 코어가 파괴되지 않게 조심하세요~!"
+                else:
+                    delete {국가::전쟁선포}
+                    broadcast "&f[&c전쟁&f] 이제부터 코어 파괴가 불가능 합니다!"
+                    send title "&c&l전쟁 종료" with subtitle "&a전쟁 타임이 종료되었습니다!" to all players
+            else:
+                send "{@prefix} &c관리진만 사용할 수 있습니다." to player
+        else if arg-1 is "세금설정":
+            if sender is op:
+                if arg-2 is not set:
+                    send "{@prefix} &cArgment 2 값을 설정해주세요." to player
+                else:
+                    send "{@prefix} &a세금을 설정하고 있습니다..." to player
+                    set {_n} to {국가::서버::서버세금}
+                    if {_n} is not set:
+                        set {_n} to 0
+                    set {국가::서버::서버세금} to arg-2 parsed as number
+                    send "{@prefix} &a세금을 설정했습니다!" to player
+                    broadcast "{@prefix} &a세금 변경: &c%{_n}%%% &a-> &a%{국가::서버::서버세금}%%% &7( &b%{국가::서버::서버세금}-{_n}%&7%% 변경 )"
+            else if sender is console:
+                if arg-2 is not set:
+                    send "{@prefix} &cArgment 2 값을 설정해주세요." to sender
+                else:
+                    send "{@prefix} &a세금을 설정하고 있습니다..." to sender
+                    set {_n} to {국가::서버::서버세금}
+                    if {_n} is not set:
+                        set {_n} to 0
+                    set {국가::서버::서버세금} to arg-2 parsed as number
+                    send "{@prefix} &a세금을 설정했습니다!" to sender
+                    broadcast "{@prefix} &a세금 변경: &c%{_n}%%% &a-> &a%{국가::서버::서버세금}%%% &7( &b%{국가::서버::서버세금}-{_n}%&7%% 변경 )"
+
+            else:
+                send "{@prefix} &c관리진만 사용할 수 있습니다." to player
+
+
+        else if arg-1 is "생성권지급":
+            if player is op:
+                if {국가::생성권} is set:
+                    give {국가::생성권} to player
+                    send "{@prefix} 국가 생성권이 지급되었습니다." to player
+                else:
+                    send "{@prefix} &c현재 서버 내 설정 된 생성권이 없습니다." to player
+            else:
+                send "{@error} &c국가 생성권을 지급하려 했으나 권한이 부족합니다." to sender
+
+
+        else if arg-1 is "강제추방":
+            if arg-2 is not set:
+                send "{@prefix} &c강제 추방을 진행할 플레이어 이름을 적어주세요." to sender
+            else if {국가가입::%uuid of arg-2%} is not set:
+                send "{@prefix} &c해당 플레이어는 국가가입이 되어있지 않습니다." to sender
+            else if sender is not op:
+                send "{@prefix} &c권한이 부족합니다." to sender
+                if sender is console:
+                    send "{@prefix} &c콘솔에서는 명령어를 사용할 수 없습니다." to sender
+            else:
+                if arg-2 parsed as player is set:
+                    set {_p} to arg-2 parsed as offline player
+                else:
+                    set {_p} to arg-2 parsed as offline player
+                delete {국가::국가원::%{국가가입::%uuid of {_p}%}%::%uuid of {_p}%}
+                delete {국가가입::%uuid of {_p}%}
+                send "{@prefix} &a성공적으로 해당 플레이어를 강제추방 하였습니다." to sender
+
+        else if arg-1 is "강제가입":
+            if arg-2 is not set:
+                send "{@prefix} &6국가를 강제가입 하려면 강제가입을 진행할 국가 이름이 있어야 합니다."
+            else if {국가::목록::%arg-2%} is not set:
+                send "{@prefix} &6국가를 강제가입 하려면 강제가입을 진행할 국가가 있어야 하나 해당 이름을 가진 국가는 없습니다."
+            else if sender is op:
+                set {국가가입::%uuid of player%} to arg-2
+                set {국가::국가원::%{국가가입::%uuid of player%}%::%uuid of player%} to uuid of player
+                wait 1 tick
+                loop {국가::국가원::%{국가가입::%uuid of player%}%::*}:
+                    set {_index} to loop-index
+                    set {_index} to {_index} parsed as player
+                    set {_index} to name of {_index}
+                    send "{@prefix} &c관리진 &b%player% &e님께서 국가에 들어오셨어요!" to {_index} parsed as player
+                set {_n} to number of {국가::로그::%{국가가입::%uuid of player%}%::*}
+                set {국가::로그::%{국가가입::%uuid of player%}%::%{_n}+1%} to "&7[%now formatted as "HH:mm:ss"%] &a%player% &7님께서 국가에 강제가입하셨습니다."
+
+        else if arg-1 is "이자지급해제국가":
+            if arg-2 is not set:
+                send "{@prefix} &6국가를 강제가입 하려면 강제가입을 진행할 국가 이름이 있어야 합니다."
+            else if {국가::목록::%arg-2%} is not set:
+                send "{@prefix} &6국가를 강제가입 하려면 강제가입을 진행할 국가가 있어야 하나 해당 이름을 가진 국가는 없습니다."
+            else if sender is op:
+                set {국가::이자금지::%arg-2%} to true
+                send "{@prefix} &b%arg-2% &6국가는 한도초과로 더 이상 이자 지급이 되지 않습니다!" 
+                broadcast "{@prefix} &b%arg-2% &6국가는 한도초과로 더 이상 이자 지급이 되지 않습니다!" 
+            
+        else if arg-1 is "강제해체":
+            if arg-2 is not set:
+                send "{@prefix} &6국가를 강제해체 하려면 강제해체를 진행할 국가 이름이 있어야 합니다."
+            else if {국가::목록::%arg-2%} is not set:
+                send "{@prefix} &6국가를 강제해체 하려면 강제해체를 진행할 국가가 있어야 하나 해당 이름을 가진 국가는 없습니다."
+            else:
+                if sender is op:
+                    send "{@prefix} &e국가를 강제로 해체하고 있습니다..." to player
+                    set {_n} to arg-2
+                    loop {국가::국가원::%{_n}%::*}:
+                        delete {국가::국가원::%{_n}%::%loop-index%}
+                        delete {국가가입::%loop-index%}
+                        delete {국가채팅::%loop-index%}
+                    delete {국가::목록::%{_n}%} and {국가::국가장::%{_n}%}
+                    delete {국가::국가잔고::%{_n}%}
+                    delete {국가::로그::%{_n}%::*}
+                    delete {국가::로그::%{_n}%}
+                    delete {국가::홍보쿨타임::%{_n}%}
+                    delete {국가::국가스폰::%{_n}%}
+                    delete {국가::국가창고::%{_n}%}
+                    send "{@prefix} &a국가를 강제로 해체하였습니다." to player
+                    #코어 삭제 
+                    delete {코어::%{국가::코어::%{_n}%::1}%}
+                    set block at {국가::코어::%{_n}%::1} to air
+                    delete {국가::코어::%{_n}%}
+                else if sender is console:
+                    send "{@prefix} &e국가를 강제로 해체하고 있습니다..." to player
+                    set {_n} to arg-2
+                    loop {국가::국가원::%{_n}%::*}:
+                        delete {국가::국가원::%{_n}%::%loop-index%}
+                        delete {국가가입::%loop-index%}
+                    delete {국가::목록::%{_n}%} and {국가::국가장::%{_n}%}
+                    delete {국가::국가잔고::%{_n}%}
+                    delete {국가::로그::%{_n}%}
+                    delete {국가::홍보쿨타임::%{_n}%}
+                    delete {국가::국가스폰::%{_n}%}
+                    delete {국가::국가창고::%{_n}%}
+
+                    #코어 삭제 
+                    delete {코어::%{국가::코어::%{_n}%::1}%}
+                    set block at {국가::코어::%{_n}%::1} to air
+                    delete {국가::코어::%{_n}%}
+                    send "{@prefix} &a국가를 강제로 해체하였습니다." to player
+                else:
+                    send "{@prefix} &c펄미션 레벨이 4 이상인 사람만 해당 명령을 시행할 수 있습니다." to sender
+        else if arg-1 is "데이터초기화":
+            if sender is console:
+                delete {국가::*}
+                delete {코어::*}
+                delete {국가가입::*}
+                broadcast "&c국가 데이터 소멸처리가 되었습니다."
+        else if arg-1 is "데이터리스트":
+            if sender is op:
+                send "{@prefix} &e국가 시스템 Variables List" to sender
+                send "{@prefix} &e%{국가::*}%" to sender
+                send "{@prefix} &6%{코어::*}%" to sender
+                send "{@prefix} &a%{국가가입::*}%" to sender
+
+        else if arg-1 is "코어위치변경":
+            if sender is op:
+                if "%player's world%" doesn't contain "world":
+                    send "{@prefix} &c해당 명령어는 오버월드에서만 작동합니다." to player
+                    stop
+                else if player is not set:
+                    send "{@prefix} &c당신의 플레이어 정보를 확인하지 못하였습니다. 재접속 해주시기 바랍니다." to player
+                else if arg-2 is not set:
+                    send "{@prefix} &c국가 이름을 설정해주세요." to sender
+                else:
+                    set {국가::코어설치감지::%player%::메인코어} to 25
+                    give 1 crying obsidian named "&e&l변경 코어" with lore "&7원하는 자리에 코어를 설치해주세요!" to player
+                    while {국가::코어설치감지::%player%::메인코어} > 0:
+                        subtract 1 from {국가::코어설치감지::%player%::메인코어}
+                        send action bar "&e국가 코어 변경을 위해 &a코어&e를 설치해주세요. &b%{국가::코어설치감지::%player%::메인코어}%&f초에도 미설치 시 cancel 됩니다." to player
+                        wait 1 seconds
+                    if {국가::코어설치감지::%player%::메인코어} is 0:
+                        delete {국가::코어설치감지::%player%::메인코어}
+                        send "{@prefix} &c코어가 설치되지 않았습니다." to player
+                    else:
+                        set block at {국가::코어::%arg-2%::1} to air
+                        delete {코어::%{_loc}%}
+                        set {_loc} to {국가::코어설치감지::%player%::메인코어}
+                        delete {코어::%{국가::코어::%arg-2%::1}%}
+                        set {국가::코어::%arg-2%::1} to {_loc}
+                        set {코어::%{_loc}%} to arg-2
+                        send "&f[&6국가&f] &b%{_loc}% &f에 코어 위치가 변경되었습니다." to sender 
+        else if arg-1 is "코어위치확인":
+            if sender is op:
+                if "%player's world%" doesn't contain "world":
+                    send "{@prefix} &c해당 명령어는 오버월드에서만 작동합니다." to player
+                    stop
+                else if player is not set:
+                    send "{@prefix} &c당신의 플레이어 정보를 확인하지 못하였습니다. 재접속 해주시기 바랍니다." to player
+                else if arg-2 is not set:
+                    send "{@prefix} &c국가 이름을 설정해주세요." to sender
+                else:
+                    send "&f[&6국가&f] &b%arg-2% &f국가 코어 위치는 &a%{국가::코어::%arg-2%::1}% &f입니다." to sender 
+        else if arg-1 is "코어위치삭제":
+            if sender is op:
+                set {_loc} to location of player's target block
+                delete {코어::%{_loc}%}
+                send "&f[&6국가&f] &b%{_loc}% &f에 코어가 DB 삭제 됨." to sender 
+
+        else:
+            if arg-1 is set:
+                send "{@prefix} &c잘못 된 요청입니다: &6해당 argments 는 없습니다." to sender
+            else:
+                send "{@prefix} &6/국가 &b생성 &e<이름> &7- 국가를 생성합니다." to sender
+                send "{@prefix} &6/국가 &b해체 &7- 자신의 국가를 해체합니다." to sender
+                send "{@prefix} &6/국가 &b공지 &d<내용> &7- 자신의 국가원에게 공지를 올립니다." to sender
+                send "{@prefix} &6/국가 &b추방 &e<플레이어> &7- 해당 플레이어를 자신의 국가에서 추방합니다." to sender
+                send "{@prefix} &6/국가 &b초대 &e<플레이어> &7- 해당 플레이어를 자신의 국가에 초대합니다." to sender
+                send "{@prefix} &6/국가 &b이자계산 &7- 자신의 국가 이자를 계산합니다." to sender
+                send "{@prefix} &6/국가 &b탈퇴 &7- 국가에서 나갑니다." to sender
+                send "{@prefix} &6/국가 &b로그 &7- 국가 내에서 발생한 모든 이벤트의 로그를 확인합니다." to sender
+                send "{@prefix} &6/국가 &b잔고추가 &e<값> &7- 국가 잔고[국고] 를 &e<값> &7만큼 채웁니다." to sender
+                send "{@prefix} &6/국가 &b잔고빼기 &e<값> &7- 국가 잔고[국고] 를 &e<값> &7만큼 뺍니다." to sender
+                send "{@prefix} &6/국가 &b채팅 &7- 국가 채팅을 On/Off 합니다." to sender
+                send "{@prefix} &6/국가 &b스폰설정 &7- 국가의 스폰을 설정합니다." to sender
+                send "{@prefix} &6/국가 &b스폰 &7- 국가 스폰으로 이동합니다." to sender
+                send "{@prefix} &6/국가 &b창고 &7- 국가 창고를 엽니다. [열고 있다면 타 플레이어가 열 수 없습니다.]" to sender
+                send "{@prefix} &6/국가 &a수락 &7- 국가 초대에 수락합니다." to sender
+                send "{@prefix} &6/국가 &c거부 &7- 국가 초대를 거부합니다." to sender
+                send "{@prefix} &6/국가 &6정보 &7- 자신의 국가 정보를 확인합니다." to sender
+                send "{@prefix} &6/국가 &e목록 &7- 서버 내 국가 목록을 확인합니다." to sender
+                send "{@prefix} &6국가 도움말 1 / 1 PAGE" to sender
+
+# 국가 Complete
+on tab complete of "/국가":
+    if sender is not op:
+        if sender is not console:
+            set tab completions for position 1 to "생성", "양도", "해체", "공지", "추방", "초대", "탈퇴", "로그", "잔고추가", "잔고빼기", "채팅", "스폰설정", "스폰", "창고", "수락", "거부", "정보" and "목록"
+        else:
+            set tab completions for position 1 to "생성", "양도", "해체", "공지", "추방", "초대", "탈퇴", "로그", "잔고추가", "잔고빼기", "채팅", "스폰설정", "스폰", "창고", "수락", "거부", "정보", "목록", "생성권설정", "전쟁", "생성권지급", "강제해체", "강제추방" and "데이터초기화"
+    else:
+        set tab completions for position 1 to "생성", "양도", "해체", "공지", "추방", "초대", "탈퇴", "로그", "잔고추가", "잔고빼기", "채팅", "스폰설정", "스폰", "창고", "수락", "거부", "정보", "목록", "생성권설정", "전쟁", "생성권지급", "강제해체", "강제추방" and "데이터초기화"
+    
+    if tab arg-1 is "초대":
+        set tab completions for position 2 to all players
+    else if tab arg-1 is "강제추방":
+        set tab completions for position 2 to all players
+    else if tab arg-1 is "추방":
+        set tab completions for position 2 to all players
+    else if tab arg-1 is "양도":
+        set tab completions for position 2 to all players
+
+
+# 코어 설치 감지
+on place of crying obsidian:
+    if name of player's tool is "&e&l메인 코어":
+        cancel event
+        if {국가::코어설치감지::%player%::메인코어} is set:
+            set {국가::코어설치감지::%player%::메인코어} to event-block's location
+            set {_y} to y-coord of event-block's location
+            if {_y} >= 64:
+                if {_y} <= 200:
+                    send "{@prefix} &e메인 코어&f가 설치되었습니다!" to player
+                    remove player's tool from player's inventory
+                    wait 2 tick
+                    set block at event-block's location to beacon
+                else:
+                    set {국가::코어설치감지::%player%::메인코어} to 0
+                    send "{@prefix} &c설치 할 수 없습니다! [ Y 좌표 제한: 64 ~ 200 ]" to sender
+                    remove player's tool from player's inventory
+            else:
+                set {국가::코어설치감지::%player%::메인코어} to 0
+                send "{@prefix} &c설치 할 수 없습니다! [ Y 좌표 제한: 64 ~ 200 ]" to sender
+                remove player's tool from player's inventory
+        else:
+            set {국가::코어설치감지::%player%::메인코어} to 0
+            remove player's tool from player's inventory
+            send "&f[&c오류&f] 당신은 메인코어 설치 권한이 없습니다!" to player
+    else if name of player's tool is "&e&l변경 코어":
+        cancel event
+        if {국가::코어설치감지::%player%::메인코어} is set:
+            set {국가::코어설치감지::%player%::메인코어} to event-block's location
+            set {_y} to y-coord of event-block's location
+            if {_y} >= 64:
+                if {_y} <= 200:
+                    send "{@prefix} &e메인 코어&f가 설치되었습니다!" to player
+                    remove player's tool from player's inventory
+                    wait 2 tick
+                    set block at event-block's location to beacon
+                else:
+                    set {국가::코어설치감지::%player%::메인코어} to 0
+                    send "{@prefix} &c설치 할 수 없습니다! [ Y 좌표 제한: 64 ~ 200 ]" to sender
+                    remove player's tool from player's inventory
+            else:
+                set {국가::코어설치감지::%player%::메인코어} to 0
+                send "{@prefix} &c설치 할 수 없습니다! [ Y 좌표 제한: 64 ~ 200 ]" to sender
+                remove player's tool from player's inventory
+        else:
+            set {국가::코어설치감지::%player%::메인코어} to 0
+            remove player's tool from player's inventory
+            send "&f[&c오류&f] 당신은 변경 코어 설치 권한이 없습니다!" to player
+            
+
+# 코어 삭제 감지
+on break of beacon:
+    if {코어::%event-block's location%} is set:
+        if {국가::전쟁선포} is set:
+            if {국가가입::%uuid of event-player%} is {코어::%event-block's location%}:
+                cancel event
+                send "{@prefix} &6국가원은 코어를 파괴할 수 없습니다!" to event-player
+            else:
+                send title "&e&l코어 파괴" with subtitle "&6%{코어::%event-block's location%}% &e국가의 코어가 파괴되었습니다." to all players
+                broadcast "&f[&c점령&f] &6%{코어::%event-block's location%}% &e국가의 코어가 파괴되었습니다. %nl% &7( 파괴: %event-player% )"
+                broadcast "&f[&c소멸&f] &6%{코어::%event-block's location%}% &e국가의 코어 파괴로 국가가 소멸되었습니다."
+                execute console command "국가 강제해체 %{코어::%event-block's location%}%"
+                delete {코어::%event-block's location%}
+                clear drops
+        else:
+            cancel event
+
+on block damaging:
+    if {코어::%event-block's location%} is set:
+        if {국가::전쟁선포} is set:
+            if block is beacon:
+                loop {국가::국가원::%{코어::%event-block's location%}%::*}:
+                    set {_1} to loop-index
+                    set {_1} to {_1} parsed as player
+                    set {_1} to name of {_1}
+                    send action bar "&b%event-player% &c가 현재 당신의 코어에 데미지를 입히고 있습니다!" to {_1} parsed as player
+            else:
+                send action bar "%{코어::%event-block's location%}% &6국가의 코어가 삭제되었습니다. &c버그" to ops
+                send title "&e&l코어 파괴" with subtitle "&6%{코어::%event-block's location%}% &e국가의 코어가 파괴되었습니다." to all players
+                broadcast "&f[&c점령&f] &6%{코어::%event-block's location%}% &e국가의 코어가 파괴되었습니다. %nl% &7( 파괴: &6오류로 인하여 이전에 파괴처리가 감지되지 않음&7 )"
+                broadcast "&f[&c소멸&f] &6%{코어::%event-block's location%}% &e국가의 코어 파괴로 국가가 소멸되었습니다."
+                execute console command "국가 강제해체 %{코어::%event-block's location%}%"
+                delete {코어::%event-block's location%}
+
+
+
+on explosion:
+    wait 1 tick
+    loop exploded blocks:
+        if {코어::%loop-value's location%} is set:
+            if {국가::전쟁선포} is set:
+                send title "&e&l코어 파괴" with subtitle "&6%{코어::%loop-value's location%}% &e국가의 코어가 파괴되었습니다." to all players
+                broadcast "&f[&c점령&f] &6%{코어::%loop-value's location%}% &e국가의 코어가 파괴되었습니다. %nl% &7( 파괴: &c%event-entity%&7 )"
+                execute console command "국가 강제해체 %{코어::%loop-value's location%}%"
+                delete {코어::%loop-value's location%}
+                loop all dropped items:
+                    kill loop-value-2
+            else:
+                set block at loop-value's location to beacon
+                loop all dropped items:
+                    kill loop-value-2
+
+
+every 3 seconds:
+    $ thread
+    loop {코어::*}:
+        set {_loc} to loop-index
+        set {_value} to loop-value
+        replace all "world:" with "" in {_loc}
+        replace all "," with "||" in {_loc}
+        set {_loc::*} to {_loc} split by "||"
+        set {_loc::1} to {_loc::1} parsed as number
+        set {_loc::2} to {_loc::2} parsed as number
+        set {_loc::3} to {_loc::3} parsed as number
+        if block at location({_loc::1}, {_loc::2}, {_loc::3}, world "world") is not beacon:
+            broadcast "&f[&c오류&f] &b%{_value}% &6국가의 코어에 오류가 발생하였습니다."
+            set block at location({_loc::1}, {_loc::2}, {_loc::3}, world "world") to beacon
+            broadcast "&f[&a오류&f] &b%{_value}% &6국가의 코어 오류가 해결되었습니다."
+
+        # 호퍼 버그
+        set block at location({_loc::1}, {_loc::2}-1, {_loc::3}, world "world") to air
+
+on quit:
+    set {국가초대::%player%} to -11
+
+on join:
+    set {국가초대::%player%} to -11
+
+# 국가창고
+on inventory close:
+    if name of player's current inventory contains "&6&l%{국가가입::%uuid of player%}% &e국가 창고":
+        send "{@prefix} &e국가 창고 저장 중입니다..." to player
+        set {_n} to 0
+        loop 54 times:
+            set {국가::국가창고::%{국가가입::%uuid of player%}%::%{_n}%} to slot {_n} of player's current inventory
+            add 1 to {_n}
+        send "{@prefix} &a국가 창고가 저장되었습니다!" to player
+        set {국가::국가창고::%{국가가입::%uuid of player%}%} to "없음"
+
+
+
+
+command /국고보기 [<text>]:
+    trigger:
+        if sender is op:
+            send "{@prefix} &b%arg-1% &6국가의 국고는 &b%Unit({국가::국가잔고::%arg-1%})% &6달러입니다." to sender
+
+command /국가원 [<offlineplayer>]:
+    trigger:
+        if sender is op:
+            send "{@prefix} &b%arg-1% &6님은 &b%{국가가입::%uuid of arg-1%}%&6 국가입니다." to sender

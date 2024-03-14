@@ -1,0 +1,7 @@
+on command:
+    if "%sender%" is not "@":
+        if "%command%" contains "tc":
+            if player is not op:
+                cancel event
+                send "&6---- &7[ TabSystem ] &6----" to player
+                send "&f 테스트 세션 &c&oBeep!" to player
