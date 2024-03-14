@@ -1,0 +1,4 @@
+on explosion prime:
+    if event-entity is explosive minecart:
+        cancel event
+        kill event-entity

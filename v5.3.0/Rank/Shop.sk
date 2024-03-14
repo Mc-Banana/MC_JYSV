@@ -1,0 +1,488 @@
+# =================================================================
+# 기본 메시지 옵션
+# =================================================================
+options:
+    op : &f[&6CASHSHOP&f]
+    user : &f[&6코인상점&f]
+    error : &f[&4오류&f]
+    ukerr : &f[&7오류&f]
+    debug : &f[&5디버그&f] &7-
+
+
+# =================================================================
+# NPC 관련
+# =================================================================
+on right click on entity:
+    if entity's name contains "RankShop":
+        execute player command "CASHSHOP 상점열기 랭크상점"
+
+        
+
+# =================================================================
+command /CASHSHOP [<text>] [<text>] [<text>] [<text>] [<text>] [<text>] [<text>] [<text>]:
+    trigger:
+        if sender is player:
+            # ====  OP 가 아닌 경우에 명령어 사용시 ====
+            
+            # [A] :: arguments 가 설정되어있는가?
+            if arg-1 is not set:
+                send "{@error} 상점 명령 오류가 발생했습니다." to sender
+                send "{@error} 해당 명령은 관리자 전용이오니 참고해주세요." to sender
+                stop
+
+            # [B] :: arguments 가 상점 열기인가?
+            else if arg-1 is "상점열기":
+                # [1] :: arguments 2 가 설정되어 있는가?
+                if arg-2 is not set:
+                    send "{@error} 상점을 열려고 했으나 오류가 발생했습니다." to sender
+                    send "{@error} &e표시할 상점 이름이 적혀있지 않습니다." to sender
+                    stop
+
+                # [2] :: arguments 2 가 올바른 상점 이름인가?
+                else if {커스텀윤상점::%arg-2%} is not set:
+                    send "{@error} 상점을 열려고 했으나 오류가 발생했습니다." to sender
+                    send "{@error} &e상점 이름이 올바르지 않습니다 &7:: &b%arg-2%" to sender
+                    stop
+
+                # [3] :: arguments 2 가 올바른 상점 이름 이라면,
+                else:
+                    # [1] :: 만약 상점이 닫혀있는 상태라면,
+                    if {커스텀윤상점::%arg-2%::상태} is false:
+                        send "{@user} 해당 상점은 현재 닫혀있습니다." to sender
+                        send "{@user} 다른 상점을 이용해주세요." to sender
+                        stop
+
+                    # [2] :: 만약 상점이 열려있는 상태라면,
+                    else if {커스텀윤상점::%arg-2%::상태} is true:
+                        # [1] :: 상점 Chest 열기
+                        open chest inventory with {커스텀윤상점::%arg-2%::라인} row named "&f[&b랭크상점&f] &b%colored {커스텀윤상점::%arg-2%}%" to player
+                        # [2] :: 상점 내용물 불러오기
+                        set {_n} to 0
+                        loop {커스텀윤상점::%arg-2%::라인}*9 times:
+                            set slot {_n} of player's current inventory to {커스텀윤상점::%arg-2%::아이템::%{_n}%} with lore lore of {커스텀윤상점::%arg-2%::아이템::%{_n}%} and " " and "  &6::  &b좌클릭 &f을 하여 해당 아이템을 &a구매 &f합니다." and "  &6::  &b우클릭 &f을 하여 해당 아이템을 &a판매 &f합니다." and "  &6::  &b쉬프트 &a+ &b좌클릭 &f을 하여 해당 아이템 &a64개&f를 구매합니다." and "  &6::  &b쉬프트 &a+ &b우클릭 &f을 하여 해당 아이템을 &a모두 판매 &f합니다." and " " and "  &a::  &f아이템 정보 &7( 잘못 구매 시 취소할 수 없습니다. )" and "      &a::  &f구매가 &7: &6%{커스텀윤상점::%arg-2%::아이템구매가::%{_n}%}% &f윤" and "      &a::  &f판매가 &7: &6%{커스텀윤상점::%arg-2%::아이템판매가::%{_n}%}% &f윤" and "  "
+                            add 1 to {_n}
+
+                        # [3] :: 상점 내용물을 모두 불러왔으니, 코드 종료
+                        stop
+                        # [STOP] :: 열기 코드 끝
+                    # [3] :: 위 모든 것이 아닌 상점 상태가 올바르지 않다면,
+                    else:
+                        send "{@ukerr} 상점을 열려고 했으나 오류가 발생했습니다." to sender
+                        send "{@ukerr} &e상점 데이터를 로드하지 못했습니다." to sender
+                        stop
+
+            
+            # [C] :: arguments 가 상점 설정인가?
+            else if arg-1 is "상점설정":
+                # 이 란은 비웁니다.
+                if sender is not op:
+                    send "{@ukerr} 알 수 없는 타입" to sender
+                
+         
+                        
+
+        # 만약 OP 를 보유하고 있다면 [ CONSOLE ],
+        if sender is console:
+            # 만약 보낸 사람이 콘솔 이라면?
+            send "{@error} &e콘솔에서는 모든 명령을 실행할 수 없습니다." to sender
+            send "{@error} &e인게임에서 실행해주세요." to sender
+            # [STOP] :: 콘솔 코드 끝
+            stop
+
+        # 만약 Sender 가 OP 라면?
+        if sender is op:
+            # [C] :: arguments 가 상점 설정인가?
+            if arg-1 is "상점설정":
+                # [*] :: 상점 설정 안내 문구
+                send "{@op} &e당신은 &b상점 설정 &e권한을 설정하고 있습니다." to sender
+
+                # [1] :: 상점 생성
+                if arg-2 is "생성":
+                    # [1] :: 상점 이름이 없는가?
+                    if arg-3 is not set:
+                        send "{@op} 상점 이름이 설정되어있지 않습니다. 아래는 &6사용법&f입니다." to sender
+                        send "{@op} &f/CASHSHOP <ttp:&e상점 설정의 시작입니다>&e상점설정<reset> &6생성 &f<ttp:&6이 곳에 상점 이름을 적어주세요. &7| &f예시 &7:: &f음식 상점>&6상점 이름<reset> " to sender
+                        stop
+                    
+                    # [2] :: 만약 상점 이름이 있다면, 상점 세팅하기
+                    else if arg-3 is set:
+                        # [1] :: 만약 같은 상점 이름이 있다면
+                        if {커스텀윤상점::%arg-3%} is not set:
+                            send "{@op} 상점을 생성하고 있습니다." to sender
+                            set {커스텀윤상점::%arg-3%} to colored arg-3
+                            set {커스텀윤상점::%arg-3%::라인} to 3
+                            set {커스텀윤상점::%arg-3%::상태} to true
+                            send "{@op} 상점을 &a정상&f적으로 생상하였습니다." to sender
+                            send "{@op} 상점 이름은 색깔코드가 있을 경우 그대로 반영되지 않습니다. 삭제해주세요!" to sender
+                            send "{@op} 상점을 수정하려면 &f/CASHSHOP &e상점설정 &6아이템수정 &f/ &6라인수정 &f%uncolored arg-3% &f을 입력해주세요." to sender
+                            stop
+                        else:
+                            send "{@op} 상점을 생성하는데 &c실패&f하였습니다." to sender
+                            send "{@error} &e같은 이름을 가진 상점이 있습니다." to sender
+                            stop
+
+
+                # [2] :: 상점 수정
+                else if arg-2 is "아이템수정":
+                    # [1] :: 상점 이름이 없는가?
+                    if arg-3 is not set:
+                        send "{@op} 상점 이름이 설정되어있지 않습니다. 아래는 &6사용법&f입니다." to sender
+                        send "{@op} &f/CASHSHOP <ttp:&e상점 설정의 시작입니다>&e상점설정<reset> &6아이템수정 &f<ttp:&6이 곳에 상점 이름을 적어주세요. &7| &f예시 &7:: &f음식 상점>&6상점 이름<reset> " to sender
+                        stop
+                    
+                    # [2] :: 만약 상점 이름이 있다면, 상점 수정하기
+                    else if arg-3 is set:
+                        # [1] :: 만약 입력한 상점이 기록에 있다면
+                        if {커스텀윤상점::%arg-3%} is set:
+                            # [1] :: 상점 Chest 열기
+                            open chest inventory with {커스텀윤상점::%arg-3%::라인} row named "&f[&b랭크상점 설정&f] &b%colored {커스텀윤상점::%arg-3%}%" to player
+                            # [2] :: 상점 내용물 불러오기
+                            set {_n} to 0
+                            loop {커스텀윤상점::%arg-3%::라인}*9 times:
+                                if {커스텀윤상점::%arg-3%::아이템판매가::%{_n}%} is not set:
+                                    set {커스텀윤상점::%arg-3%::아이템판매가::%{_n}%} to "&c판매 불가"
+                                else if {커스텀윤상점::%arg-3%::아이템판매가::%{_n}%} <= 0:
+                                    set {커스텀윤상점::%arg-3%::아이템판매가::%{_n}%} to "&c판매 불가"
+
+                                if {커스텀윤상점::%arg-3%::아이템구매가::%{_n}%} is not set:
+                                    set {커스텀윤상점::%arg-3%::아이템구매가::%{_n}%} to "&c구매 불가"
+                                else if {커스텀윤상점::%arg-3%::아이템구매가::%{_n}%} <= 0:
+                                    set {커스텀윤상점::%arg-3%::아이템구매가::%{_n}%} to "&c구매 불가"
+                                set slot {_n} of player's current inventory to {커스텀윤상점::%arg-3%::아이템::%{_n}%}
+                                add 1 to {_n}
+
+                            # [3] :: 상점 내용물을 모두 불러왔으니, 코드 종료
+                            stop
+                            # [STOP] :: 열기 코드 끝
+                        # [2] :: 그런데 만약 입력한 상점이 기록 ( DB ) 에 없다면
+                        else:
+                            send "{@error} &b%colored arg-3% &f상점은 없는 상점 입니다." to sender
+                            stop
+
+                # [3] :: 상점 라인 수정
+                else if arg-2 is "라인수정":
+                    # [1] :: 상점 이름이 없는가?
+                    if arg-3 is not set:
+                        send "{@op} 상점 이름이 설정되어있지 않습니다. 아래는 &6사용법&f입니다." to sender
+                        send "{@op} &f/CASHSHOP <ttp:&e상점 설정의 시작입니다>&e상점설정<reset> &6라인수정 &f<ttp:&6이 곳에 상점 이름을 적어주세요. &7| &f예시 &7:: &f음식 상점>&6상점 이름<reset>  &f<ttp:&6이 곳에 상점 라인을 적어주세요. &7| &f예시 &7:: &f6 &7( 기본 : 3 )>&6줄 수<reset> " to sender
+                        stop
+                    
+                    # [2] :: 만약 상점 이름이 있다면, 상점 수정하기
+                    else if arg-3 is set:
+                        # [1] :: 만약 입력한 상점이 기록에 있다면
+                        if {커스텀윤상점::%arg-3%} is set:
+                            # [1] :: 상점 라인 수정
+                            send "{@op} 상점 라인이 수정 됩니다. &7:: &b%arg-4 parsed as number%" to sender
+                            set {_number} to arg-4 parsed as number
+                            set {커스텀윤상점::%arg-3%::라인} to {_number}
+                            send "{@op} 상점 라인이 수정되었습니다." to sender
+
+                            # [2] :: 코드 종료
+                            stop
+                            # [STOP] :: 열기 코드 끝
+                        # [2] :: 그런데 만약 입력한 상점이 기록 ( DB ) 에 없다면
+                        else:
+                            send "{@error} &b%colored arg-3% &f상점은 없는 상점 입니다." to sender
+                            stop
+
+
+                # [4] :: 상점 제거
+                if arg-2 is "제거":
+                    # [1] :: 상점 이름이 없는가?
+                    if arg-3 is not set:
+                        send "{@op} 상점 이름이 설정되어있지 않습니다. 아래는 &6사용법&f입니다." to sender
+                        send "{@op} &f/CASHSHOP <ttp:&e상점 설정의 시작입니다>&e상점설정<reset> &6제거 &f<ttp:&6이 곳에 상점 이름을 적어주세요. &7| &f예시 &7:: &f음식 상점>&6상점 이름<reset> " to sender
+                        stop
+                    # [2] :: 만약 상점 이름이 있다면, 상점 제거 세팅하기
+                    else if arg-3 is set:
+                        # [1] :: 만약 같은 상점 이름이 없다면
+                        if {커스텀윤상점::%arg-3%} is not set:
+                            send "{@error} &c해당 상점은 없는 상점입니다." to sender
+                            stop
+                        else:
+                            send "{@op} 상점을 제거하고 있습니다." to sender
+                            delete {커스텀윤상점::%arg-3%}
+                            send "{@op} 상점을 제거하였습니다." to sender
+                            send "{@op} 상점 복구는 스크립트 백업 폴더에서 확인하세요." to sender
+                            stop
+
+                # [5] :: 상점 로그
+                if arg-2 is "로그":
+                    # [1] :: 상점 로그 Sending
+                    send "{@op} 만들어진 상점 (%number of {커스텀윤상점::*}%)" to sender
+                    stop 
+
+                # [6] :: 아이템 가격설정
+                else if arg-2 is "아이템가격설정":
+                    # [1] :: 상점 이름이 없는가?
+                    if arg-3 is not set:
+                        send "{@op} 상점 이름이 설정되어있지 않습니다. 아래는 &6사용법&f입니다." to sender
+                        send "{@op} &f/CASHSHOP <ttp:&e상점 설정의 시작입니다>&e상점설정<reset> &6아이템가격설정 &f<ttp:&6이 곳에 상점 이름을 적어주세요. &7| &f예시 &7:: &f음식 상점>&6상점 이름<reset>  &f<ttp:&6이 곳에 아이템 라인을 적어주세요. &7| &f예시 &7:: &f0>&6아이템 라인<reset> &f<ttp:&6이 곳에 구매 가격을 적어주세요. &7| &f예시 &7:: &f5000>&6구매 가격<reset> &f<ttp:&6이 곳에 판매 가격을 적어주세요. &7| &f예시 &7:: &f5000>&6판매 가격<reset> " to sender
+                        stop
+                    
+                    # [2] :: 만약 상점 이름이 있다면, 상점 수정하기
+                    else if arg-3 is set:
+                        # [1] :: 만약 입력한 상점이 기록에 있다면
+                        if {커스텀윤상점::%arg-3%} is set:
+                            # [1] 아이템 번호 설정 되어있는가?
+                            if arg-4 is not set:
+                                send "{@op} 아이템 상자 번호가 설정되어있지 않습니다. 아래는 &6사용법&f입니다." to sender
+                                send "{@op} &f/CASHSHOP <ttp:&e상점 설정의 시작입니다>&e상점설정<reset> &6아이템가격설정 &f<ttp:&6이 곳에 상점 이름을 적어주세요. &7| &f예시 &7:: &f음식 상점>&6상점 이름<reset>  &f<ttp:&6이 곳에 아이템 라인을 적어주세요. &7| &f예시 &7:: &f0>&6아이템 라인<reset> &f<ttp:&6이 곳에 구매 가격을 적어주세요. &7| &f예시 &7:: &f5000>&6구매 가격<reset> &f<ttp:&6이 곳에 판매 가격을 적어주세요. &7| &f예시 &7:: &f5000>&6판매 가격<reset> " to sender
+                                stop
+
+                            # [2] 만약 아이템 번호가 올바르지 않는가?
+                            else if arg-4 parsed as number is not set:
+                                send "{@op} 아이템 상자 번호가 올바르지 않습니다. 숫자여야만 합니다." to sender
+                                send "{@op} &f/CASHSHOP <ttp:&e상점 설정의 시작입니다>&e상점설정<reset> &6아이템가격설정 &f<ttp:&6이 곳에 상점 이름을 적어주세요. &7| &f예시 &7:: &f음식 상점>&6상점 이름<reset>  &f<ttp:&6이 곳에 아이템 라인을 적어주세요. &7| &f예시 &7:: &f0>&6아이템 라인<reset> &f<ttp:&6이 곳에 구매 가격을 적어주세요. &7| &f예시 &7:: &f5000>&6구매 가격<reset> &f<ttp:&6이 곳에 판매 가격을 적어주세요. &7| &f예시 &7:: &f5000>&6판매 가격<reset> " to sender
+                                stop
+
+                            # [3] 만약 아이템 번호가 올바르지 않는가? 2
+                            else if arg-4 parsed as number > 54:
+                                send "{@op} 아이템 상자 번호가 올바르지 않습니다. 54 초과면 안됩니다." to sender
+                                send "{@op} &f/CASHSHOP <ttp:&e상점 설정의 시작입니다>&e상점설정<reset> &6아이템가격설정 &f<ttp:&6이 곳에 상점 이름을 적어주세요. &7| &f예시 &7:: &f음식 상점>&6상점 이름<reset>  &f<ttp:&6이 곳에 아이템 라인을 적어주세요. &7| &f예시 &7:: &f0>&6아이템 라인<reset> &f<ttp:&6이 곳에 구매 가격을 적어주세요. &7| &f예시 &7:: &f5000>&6구매 가격<reset> &f<ttp:&6이 곳에 판매 가격을 적어주세요. &7| &f예시 &7:: &f5000>&6판매 가격<reset> " to sender
+                                stop
+
+                            # [4] PASSED
+                            else:
+                                # 구매 가격 설정.
+                                set {_a} to 0
+                                if arg-5 is set:
+                                    if arg-5 parsed as number is not 0:
+                                        set {커스텀윤상점::%arg-3%::아이템구매가::%arg-4 parsed as number%} to arg-5 parsed as number
+                                    else:
+                                        set {커스텀윤상점::%arg-3%::아이템구매가::%arg-4 parsed as number%} to "&c구매 불가"
+                                    add 1 to {_a}
+                                # 판매 가격 설정.
+                                if arg-6 is set:
+                                    if arg-6 parsed as number is not 0:
+                                        set {커스텀윤상점::%arg-3%::아이템판매가::%arg-4 parsed as number%} to arg-6 parsed as number
+                                    else:
+                                        set {커스텀윤상점::%arg-3%::아이템판매가::%arg-4 parsed as number%} to "&c판매 불가"
+                                    add 1 to {_a}
+
+                                # 결과 도출
+                                if {_a} is 0:
+                                    send "{@op} 가격을 설정하려고 했으나 실패하였습니다." to sender
+                                else if {_a} is 1:
+                                    send "{@op} 구매 가격을 설정하였습니다." to sender
+                                else if {_a} is 2:
+                                    send "{@op} 구매 가격과 판매 가격을 설정하였습니다." to sender
+                                else:
+                                    send "{@ukerr} 알 수 없는 오류가 발생했습니다." to sender
+
+                                
+                        # [2] :: 그런데 만약 입력한 상점이 기록 ( DB ) 에 없다면
+                        else:
+                            send "{@error} &b%colored arg-3% &f상점은 없는 상점 입니다." to sender
+                            stop
+
+                # [7] Help 명령어
+                else if arg-2 is "도움말":
+                    send "{@error} Help" to sender
+                    send "{@error} /CASHSHOP &e상점설정 &6생성 &b<상점 이름>" to sender
+                    send "{@error} /CASHSHOP &e상점설정 &6아이템수정 &b<상점 이름>" to sender
+                    send "{@error} /CASHSHOP &e상점설정 &6라인수정 &b<상점 이름> &d<라인1~6>" to sender
+                    send "{@error} /CASHSHOP &e상점설정 &6제거 &b<상점 이름>" to sender
+                    send "{@error} /CASHSHOP &e상점설정 &6로그" to sender
+                    send "{@error} /CASHSHOP &e상점설정 &6아이템가격설정 &b<상점 이름> &a<아이템번호> <판매가> &c<구매가>" to sender
+                    send "{@error} /CASHSHOP &e상점열기 &b<상점 이름>" to sender
+                # [8] :: 아이템 데이터삭제
+                else if arg-2 is "데이터삭제":
+                    if player is op:
+                        send "{@op} &c데이터 삭제 중..." to sender
+                        delete {커스텀윤상점::*}
+                        send "{@op} &c데이터 삭제 완료" to sender
+                else:
+                    send "{@error} 수정 타입을 얻지 못하였습니다." to sender
+                    send "{@error} /CASHSHOP &e상점설정 &6생성 &b<상점 이름>" to sender
+                    send "{@error} /CASHSHOP &e상점설정 &6아이템수정 &b<상점 이름>" to sender
+                    send "{@error} /CASHSHOP &e상점설정 &6라인수정 &b<상점 이름> &d<라인1~6>" to sender
+                    send "{@error} /CASHSHOP &e상점설정 &6제거 &b<상점 이름>" to sender
+                    send "{@error} /CASHSHOP &e상점설정 &6로그" to sender
+                    send "{@error} /CASHSHOP &e상점설정 &6아이템가격설정 &b<상점 이름> &a<아이템번호> <판매가> &c<구매가>" to sender
+                    send "{@error} /CASHSHOP &e상점열기 &b<상점 이름>" to sender
+
+
+
+            else if arg-1 is "디버그":
+                # [ DEBUG - 로그 표기 ]
+                if arg-2 is "logvisible":
+                    send "{@debug} 로그 표기가 디폴트 상태입니다." to sender
+                    send "{@debug} 해당 디버그 타입은 변경할 수 없습니다." to sender
+                  
+                # [ DEBUG - 구매 판매 로그 표기 ]
+                else if arg-2 is "bslog":
+                    if {커스텀윤상점::로그::bslog} is not set:
+                        set {커스텀윤상점::로그::bslog} to true
+                        send "{@debug} 구매 판매 로그 표기는 이제 true 상태입니다." to sender
+                        send "{@debug} 변경 된 설정이 저장됩니다. ( 적용자 : &bOps &7)" to sender
+                    else:
+                        delete {커스텀윤상점::로그::bslog}
+                        send "{@debug} 구매 판매 로그 표기는 이제 false 상태입니다." to sender
+                        send "{@debug} 변경 된 설정이 저장됩니다. ( 적용자 : &bNone &7)" to sender
+
+
+                # [ DEBUG - 타입 없음 ]
+                else:
+                    send "{@op} &7디버그 - 알 수 없는 디버그 타입" to sender
+            else:
+                send "{@error} 수정 타입을 얻지 못하였습니다." to sender
+                send "{@error} /CASHSHOP &e상점설정 &6도움말" to sender
+                send "{@error} /CASHSHOP &e상점열기 &b<상점 이름>" to sender
+                send "{@error} /CASHSHOP &e디버그 &b<디버그 타입>" to sender
+
+
+
+
+                        
+                
+        # 만약 그 아무것도 아니라면?
+        else:
+            send "{@ukerr} &8현재 당신의 서버 권한을 확인할 수 없습니다." to sender
+            send "{@ukerr} &8관리자에게 문의하십시오." to sender
+
+
+
+
+
+
+
+
+
+
+# [1] 상점 수정 저장 코드
+on inventory close:
+    if name of player's current inventory contains "&f[&b랭크상점 설정&f] &b":
+        set {_r} to name of player's current inventory
+        replace all "&f[&b랭크상점 설정&f] &b" with "" in {_r}
+        send "{@op} %{_r}% 상점의 내용물을 &a저장&f중입니다." to sender
+        set {_n} to 0
+        loop {커스텀윤상점::%{_r}%::라인}*9 times:
+            set {커스텀윤상점::%{_r}%::아이템::%{_n}%} to slot {_n} of player's current inventory
+            #delete {커스텀윤상점::%{_r}%::아이템::%{_n}%}'s lore
+            add 1 to {_n}
+
+        send "{@op} %{_r}% 상점의 내용물을 &a저장완료&f 하였습니다." to sender
+
+
+# [2] 상점 구매 코드
+on inventory click:
+    if inventory name contains "&f[&b랭크상점&f] &b":
+        cancel event
+        set {_r} to name of player's current inventory
+        replace all "&f[&b랭크상점&f] &b" with "" in {_r}
+        play sound "minecraft:ui.button.click" to player
+        if {_n} is not set:
+            if event-slot is not air:
+                # 구매
+                if "%click type%" contains "LEFT":
+                    if "%click type%" contains "SHIFT":
+                        if {커스텀윤상점::%{_r}%::아이템구매가::%index of event-slot%} is "&c구매 불가":
+                            send "{@user} &c해당 아이템은 구매 불가 아이템입니다." to player
+                            stop
+                        else:
+                            if {코인::%uuid of player%} >= {커스텀윤상점::%{_r}%::아이템구매가::%index of event-slot%}*(64/item amount of {커스텀윤상점::%{_r}%::아이템::%index of event-slot%}):
+                                # 일반 코드
+                                give 64 of {커스텀윤상점::%{_r}%::아이템::%index of event-slot%} to player
+                                subtract {커스텀윤상점::%{_r}%::아이템구매가::%index of event-slot%}*(64/item amount of {커스텀윤상점::%{_r}%::아이템::%index of event-slot%}) from {코인::%uuid of player%}
+                                send "{@user} &b%Unit({커스텀윤상점::%{_r}%::아이템구매가::%index of event-slot%}*(64/item amount of {커스텀윤상점::%{_r}%::아이템::%index of event-slot%}))% &f윤을 지불하여 아이템을 구매하였습니다." to player
+                                if {커스텀윤상점::로그::bslog} is true:
+                                    make embed:
+                                        set title of embed to "**%player% 가 아이템을 구매하였습니다.**"
+                                        set embed color of embed to lime
+                                        add field named "" with value "**상점: %{_r}%**" to fields of embed
+                                        add field named "" with value "**UUID : %uuid of player%**" to fields of embed
+                                        add field named "" with value "**이벤트 값 : %Unit({커스텀윤상점::%{_r}%::아이템구매가::%index of event-slot%}*64)%**" to fields of embed
+                                    post last made embed to guild channel with id "1175055971157016576"
+                            else:
+                                send "{@user} &c돈이 부족하여 구매할 수 없습니다." to player
+                                stop
+                    else:
+                        if {커스텀윤상점::%{_r}%::아이템구매가::%index of event-slot%} is "&c구매 불가":
+                            send "{@user} &c해당 아이템은 구매 불가 아이템입니다." to player
+                            stop
+                        else:
+                            if {코인::%uuid of player%} >= {커스텀윤상점::%{_r}%::아이템구매가::%index of event-slot%}:
+                                # 일반 코드
+                                give {커스텀윤상점::%{_r}%::아이템::%index of event-slot%} to player
+                                subtract {커스텀윤상점::%{_r}%::아이템구매가::%index of event-slot%} from {코인::%uuid of player%}
+                                send "{@user} &b%Unit({커스텀윤상점::%{_r}%::아이템구매가::%index of event-slot%})% &f윤을 지불하여 아이템을 구매하였습니다." to player
+                                if {커스텀윤상점::로그::bslog} is true:
+                                    make embed:
+                                        set title of embed to "**%player% 가 아이템을 구매하였습니다.**"
+                                        set embed color of embed to lime
+                                        add field named "" with value "**상점: %{_r}%**" to fields of embed
+                                        add field named "" with value "**UUID : %uuid of player%**" to fields of embed
+                                        add field named "" with value "**이벤트 값 : %Unit({커스텀윤상점::%{_r}%::아이템구매가::%index of event-slot%})%**" to fields of embed
+                                    post last made embed to guild channel with id "1175055971157016576"
+                            else:
+                                send "{@user} &c돈이 부족하여 구매할 수 없습니다." to player
+                                stop
+
+                # 판매
+                else if "%click type%" contains "RIGHT":
+                    if "%click type%" contains "SHIFT":
+                        if {커스텀윤상점::%{_r}%::아이템판매가::%index of event-slot%} is "&c판매 불가":
+                            send "{@user} &c해당 아이템은 판매 불가 아이템입니다." to player
+                            stop
+                        else:
+                            set {_itemsn} to amount of {커스텀윤상점::%{_r}%::아이템::%index of event-slot%} in inventory of player
+                            if {_itemsn} is not 0:
+                                # 일반 코드
+                                remove {_itemsn} of {커스텀윤상점::%{_r}%::아이템::%index of event-slot%} from player's inventory
+                                add {커스텀윤상점::%{_r}%::아이템판매가::%index of event-slot%}*({_itemsn}/item amount of {커스텀윤상점::%{_r}%::아이템::%index of event-slot%}) to {코인::%uuid of player%}
+                                send "{@user} 아이템 &b%{_itemsn}% &f개를 판매하여 &b%Unit({커스텀윤상점::%{_r}%::아이템판매가::%index of event-slot%}*({_itemsn}/item amount of {커스텀윤상점::%{_r}%::아이템::%index of event-slot%}))% &f윤을 받았습니다. &7( %{_itemsn}/item amount of {커스텀윤상점::%{_r}%::아이템::%index of event-slot%}% 번 판매 )" to player
+                                if {커스텀윤상점::로그::bslog} is true:
+                                    make embed:
+                                        set title of embed to "**%player% 가 아이템을 판매하였습니다.**"
+                                        set embed color of embed to lime
+                                        add field named "" with value "**상점: %{_r}%**" to fields of embed
+                                        add field named "" with value "**UUID : %uuid of player%**" to fields of embed
+                                        add field named "" with value "**이벤트 값 : %Unit({커스텀윤상점::%{_r}%::아이템판매가::%index of event-slot%}*({_itemsn}/item amount of {커스텀윤상점::%{_r}%::아이템::%index of event-slot%}))%**" to fields of embed
+                                    post last made embed to guild channel with id "1175055971157016576"
+                            else:
+                                send "{@user} &c판매할 아이템이 없어 판매할 수 없습니다." to player
+                                stop
+                    else:
+                        if {커스텀윤상점::%{_r}%::아이템판매가::%index of event-slot%} is "&c판매 불가":
+                            send "{@user} &c해당 아이템은 판매 불가 아이템입니다." to player
+                            stop
+                        else:
+                            set {_itemsn} to amount of {커스텀윤상점::%{_r}%::아이템::%index of event-slot%} in inventory of player
+                            if {_itemsn} is not 0:
+                                remove {커스텀윤상점::%{_r}%::아이템::%index of event-slot%} from player's inventory
+                                add {커스텀윤상점::%{_r}%::아이템판매가::%index of event-slot%}*(1/item amount of {커스텀윤상점::%{_r}%::아이템::%index of event-slot%}) to {코인::%uuid of player%}
+                                send "{@user} 아이템을 판매하여 &b%Unit({커스텀윤상점::%{_r}%::아이템판매가::%index of event-slot%}*(1/item amount of {커스텀윤상점::%{_r}%::아이템::%index of event-slot%}))% &f윤을 받았습니다." to player
+                                if {커스텀윤상점::로그::bslog} is true:
+                                    make embed:
+                                        set title of embed to "**%player% 가 아이템을 판매하였습니다.**"
+                                        set embed color of embed to lime
+                                        add field named "" with value "**상점: %{_r}%**" to fields of embed
+                                        add field named "" with value "**UUID : %uuid of player%**" to fields of embed
+                                        add field named "" with value "**이벤트 값 : %Unit({커스텀윤상점::%{_r}%::아이템판매가::%index of event-slot%}*(1/item amount of {커스텀윤상점::%{_r}%::아이템::%index of event-slot%}))%**" to fields of embed
+                                    post last made embed to guild channel with id "1175055971157016576"
+                            else:
+                                send "{@user} &c판매할 아이템이 없어 판매할 수 없습니다." to player
+                                stop
+        else:
+            send "{@error} &c심각한 서버 오류가 발생하였습니다. &7( 재시도 해주세요. )" to player
+
+on quit:
+    delete {커스텀상점::쿨타임대기::%player%}
+on join:
+    delete {커스텀상점::쿨타임대기::%player%}
+
+
+
+# 컴플리트
+on tab complete of "/CASHSHOP":
+    set tab completions for position 1 to "상점설정", "상점열기" and "디버그"
+    if tab arg-1 is "상점설정":
+        set tab completions for position 2 to "생성", "아이템수정", "라인수정", "제거", "로그" and "아이템가격설정"
+        if tab arg-2 is not "로그":
+            set tab completions for position 3 to "< 상점 이름 >"
+    else if tab arg-1 is "상점열기":
+        set tab completions for position 2 to "< 상점 이름 >"
+    else if tab arg-1 is "디버그":
+        set tab completions for position 2 to "logvisible" and "bslog"
+

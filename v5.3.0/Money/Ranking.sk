@@ -1,0 +1,18 @@
+
+command /랭킹:
+    trigger:
+        if {_player} is not set:
+            delete {ranking::1} and {ranking::2} and {ranking::3} and {ranking::4} and {ranking::5}
+            loop {돈::*}:
+                set {_player} to loop-index
+                set {_player} to {_player} parsed as offline player
+                set {_player} to name of {_player}
+                set {_list::%{_player}%} to round({돈::%loop-index%})
+            EffSettingRank(player, indexes of {_list::*}, {_list::*}, "&6| &b<rank>등 &6| &e<key>&f님  &b<value>&f 달러", 5 )
+            wait 1 tick
+            send "&6RANKING TOP 5" to sender
+            send "&r%{ranking::1}%" to sender
+            send "&r%{ranking::2}%" to sender
+            send "&r%{ranking::3}%" to sender
+            send "&r%{ranking::4}%" to sender
+            send "&r%{ranking::5}%" to sender

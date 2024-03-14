@@ -1,0 +1,131 @@
+on join:
+    execute player command "UI1::reload"
+    execute player command "UI2::reload"
+
+on load:
+    loop all players:
+        execute loop-player command "UI1::reload"
+        execute loop-player command "UI2::reload"
+
+on quit:
+    delete {UI::%player%}
+
+# 언어
+options:
+    prefix: &f[&6UI&f]
+    
+on script load:
+    # 한국어
+    set {언어::ko_kr::DefaultUI::Msg} to "&7서버 UI 가 로딩 중입니다."
+    set {언어::ko_kr::DefaultUI::Msg1} to "&f서버 UI 가 성공적으로 &a로딩&f되었습니다."
+    set {언어::ko_kr::DefaultUI::Msg2} to "화폐&7(원)"
+    set {언어::ko_kr::DefaultUI::Msg3} to "국고&7(원)"
+    set {언어::ko_kr::DefaultUI::Msg4} to "코인&7(윤)"
+    set {언어::ko_kr::DefaultUI::Msg5} to "플탐&7(h)"
+    set {언어::ko_kr::DefaultUI::Msg6} to "국가&7(##)"
+    set {언어::ko_kr::DefaultUI::Msg7} to "접속자&7(명)"
+    set {언어::ko_kr::DefaultUI::Msg8} to "국가원&7(명)"
+    set {언어::ko_kr::DefaultUI::Msg9} to "서버시간"
+    set {언어::ko_kr::DefaultUI::Msg10} to "언어"
+    set {언어::ko_kr::DefaultUI::Msg11} to "서버 지연시간"
+    set {언어::ko_kr::DefaultUI::Msg12} to "서버 TPS"
+
+    set {언어::ko_kr::DefaultUI::View1} to "원"
+    set {언어::ko_kr::DefaultUI::View2} to "윤"
+    set {언어::ko_kr::DefaultUI::View3} to "h"
+    # 북한어
+    set {언어::ko_kp::DefaultUI::Msg} to "&7봉사기 화면 표시기가 혁명적으로 불러오고 있읍네다!"
+    set {언어::ko_kp::DefaultUI::Msg1} to "&f봉사기 화면 표시기가 혁명적으로 불러와졌읍네다."
+    set {언어::ko_kp::DefaultUI::Msg2} to "자본주의&7(원)"
+    set {언어::ko_kp::DefaultUI::Msg3} to "애국성금&7(원)"
+    set {언어::ko_kp::DefaultUI::Msg4} to "쇠돈&7(윤)"
+    set {언어::ko_kp::DefaultUI::Msg5} to "오락시간&7(시)"
+    set {언어::ko_kp::DefaultUI::Msg6} to "나라&7(##)"
+    set {언어::ko_kp::DefaultUI::Msg7} to "오락 중인 인민&7(명)"
+    set {언어::ko_kp::DefaultUI::Msg8} to "인민&7(명)"
+    set {언어::ko_kp::DefaultUI::Msg9} to "주체"
+    set {언어::ko_kp::DefaultUI::Msg10} to "우리말"
+    set {언어::ko_kp::DefaultUI::Msg11} to "봉사기 연결시간"
+    set {언어::ko_kp::DefaultUI::Msg12} to "봉사기 초 당 로동횟수"
+
+    set {언어::ko_kp::DefaultUI::View1} to "원"
+    set {언어::ko_kp::DefaultUI::View2} to "윤"
+    set {언어::ko_kp::DefaultUI::View3} to "시"
+    # 영어
+    set {언어::en_us::DefaultUI::Msg} to "&7Server UI is loading."
+    set {언어::en_us::DefaultUI::Msg1} to "&fServer UI was &asuccessfully&f loaded."
+    set {언어::en_us::DefaultUI::Msg2} to "Dollor&7($)"
+    set {언어::en_us::DefaultUI::Msg3} to "National Bal&7($)"
+    set {언어::en_us::DefaultUI::Msg4} to "Coin&7(Yun)"
+    set {언어::en_us::DefaultUI::Msg5} to "PlayTime&7(h)"
+    set {언어::en_us::DefaultUI::Msg6} to "National&7(##)"
+    set {언어::en_us::DefaultUI::Msg7} to "Players&7(명)"
+    set {언어::en_us::DefaultUI::Msg8} to "National Players&7(명)"
+    set {언어::en_us::DefaultUI::Msg9} to "SV Time"
+    set {언어::en_us::DefaultUI::Msg10} to "Lang"
+    set {언어::en_us::DefaultUI::Msg11} to "Server Ping"
+    set {언어::en_us::DefaultUI::Msg12} to "Server TPS"
+
+    set {언어::en_us::DefaultUI::View1} to "$"
+    set {언어::en_us::DefaultUI::View2} to "Yun"
+    set {언어::en_us::DefaultUI::View3} to "h"
+
+
+
+
+
+
+# SCORE BOARD
+command /UI1::reload:
+    trigger:
+        wipe player's sidebar   
+        delete {UI::%player%}
+        wait 2 seconds
+        set {UI::%player%} to true
+        send "{@prefix} %{언어::%{언어::%uuid of player%}%::DefaultUI::Msg1}%" to player
+        while {UI::%player%} is true:
+            wipe player's sidebar
+            set name of sidebar of player to "  ἔ  "
+            set score " " in sidebar of player to 10
+            set score " © &e%{언어::%{언어::%uuid of player%}%::DefaultUI::Msg2}%&e: &a%UnitEn({돈::%uuid of player%})% &2%{언어::%{언어::%uuid of player%}%::DefaultUI::View1}%   " in sidebar of player to 9
+            if {국가가입::%uuid of player%} is set:
+                set score " © &e%{언어::%{언어::%uuid of player%}%::DefaultUI::Msg3}%&e: &a%UnitEn({국가::국가잔고::%{국가가입::%uuid of player%}%})% &2%{언어::%{언어::%uuid of player%}%::DefaultUI::View1}%   " in sidebar of player to 8
+            else:
+                set score " © &e%{언어::%{언어::%uuid of player%}%::DefaultUI::Msg3}%&e: &c$&60   " in sidebar of player to 8
+            set score " ® &e%{언어::%{언어::%uuid of player%}%::DefaultUI::Msg4}%&e: &a%UnitEn({코인::%uuid of player%})%&2%{언어::%{언어::%uuid of player%}%::DefaultUI::View2}%   " in sidebar of player to 7
+            set score " ₻ &6%{언어::%{언어::%uuid of player%}%::DefaultUI::Msg5}%&6: &6%{PlaytimeUnit::%uuid of player%}%%{언어::%{언어::%uuid of player%}%::DefaultUI::View3}%&r   " in sidebar of player to 6
+            if {국가가입::%uuid of player%} is not set:
+                set score " ʩ &b%{언어::%{언어::%uuid of player%}%::DefaultUI::Msg6}%&b: &c##&6모험가   " in sidebar of player to 5
+            else:
+                set score " ʩ &b%{언어::%{언어::%uuid of player%}%::DefaultUI::Msg6}%&b: &2##&a%{국가가입::%uuid of player%}%   " in sidebar of player to 5
+
+            set score "  " in sidebar of player to 3
+
+            set score " ɚ &d%{언어::%{언어::%uuid of player%}%::DefaultUI::Msg7}%&d: &a%number of all players%&2명" in sidebar of player to 2
+            if {국가가입::%uuid of player%} is not set:
+                set score " ɚ &5%{언어::%{언어::%uuid of player%}%::DefaultUI::Msg8}%&5: &c국가 없음   " in sidebar of player to 1
+            else:
+                set score " ɚ &5%{언어::%{언어::%uuid of player%}%::DefaultUI::Msg8}%&5: &a%number of {국가::국가원::%{국가가입::%uuid of player%}%::*}%&2명   " in sidebar of player to 1
+            set score "   " in sidebar of player to 0
+            set score " ₻ &a%{언어::%{언어::%uuid of player%}%::DefaultUI::Msg9}%: &b%{서버시간::년}%&2년 &b%{서버시간::월}%&2월 &b%{서버시간::일}%&2일 &b%time of the world "world"%" in sidebar of player to -1
+
+            set score "      " in sidebar of player to -2
+
+            set score " &7&owasans.jinbando.kro.kr" in sidebar of player to -3
+            set score " &7%{언어::%{언어::%uuid of player%}%::DefaultUI::Msg10}%: %player's current language%" in sidebar of player to -4
+            wait 1 seconds
+
+command /UI2::reload:
+    trigger:
+        send "{@prefix} %{언어::%{언어::%uuid of player%}%::DefaultUI::Msg}%" to player
+        delete {UI::%player%}
+        wait 2 seconds
+        set {UI::%player%} to true
+        send "{@prefix} %{언어::%player's current language%::DefaultUI::Msg1}%" to player
+        while {UI::%player%} is true:
+            set tab header to "%nl% %nl%                        <##faff00>&lJ<##faeb00>&lI<##fad800>&lN<##fbc400>&lY<##fbb100>&lO<##fb9d00>&lO<##fb8900>&lN<##fc7600>&l.<##fc6200>&lM<##fc4e00>&lC<##fc3b00>&lV<##fd2700>&l.<##fd1400>&lK<##fd0000>&lR                   %nl% %nl% %nl%<##11FF7F>&l%{언어::%{언어::%uuid of player%}%::DefaultUI::Msg11}%&7: &8%{서버뷰어::PING::%player%}%&r&ams%nl%<##6CFFED>&l%{언어::%{언어::%uuid of player%}%::DefaultUI::Msg7}%&7: %number of all players%명%nl% %nl%<##0A68E0>&l%{언어::%{언어::%uuid of player%}%::DefaultUI::Msg12}% &f: &8%{서버뷰어::TPS}%%nl%<##FAA69B>------------------------------%nl% " and footer to "%nl%<##FAA69B>------------------------------%nl% %nl% %nl%&8%now formatted as "YYYY년 MM월 dd일 HH시 mm분 ss초"%%nl%&7%{버전}% &7- &4연결 불가%nl% " for player
+            if {국가가입::%uuid of player%} is not set:
+                set player's tab name to "&6모험가 &fㅣ %{PlaytimeUnit::%uuid of player%}%%{언어::%{언어::%uuid of player%}%::DefaultUI::View3}%&r &fㅣ %player%"
+            else:
+                set player's tab name to "&a##%{국가가입::%uuid of player%}% &fㅣ %{PlaytimeUnit::%uuid of player%}%%{언어::%{언어::%uuid of player%}%::DefaultUI::View3}% &fㅣ %player%"
+            wait 1 seconds

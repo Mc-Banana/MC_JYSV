@@ -1,0 +1,9 @@
+on right click with stick:
+    if name of player's tool contains "&e&l폭발":
+        set {_force} to name of player's tool
+        set {_force} to uncolored {_force}
+        replace all "폭발" and " " with "" in {_force}
+        set {_force} to {_force} parsed as integer
+        create an explosion of force {_force} at player's location
+    else if name of player's tool contains "&c&lplacefire":
+        set block at target block's location to fire

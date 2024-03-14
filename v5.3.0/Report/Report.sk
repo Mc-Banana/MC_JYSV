@@ -1,0 +1,32 @@
+command /신고 [<text>] [<text>]:
+    trigger:
+        if arg-1 is not set:
+            send "&f[&c신고&f] 신고가 올바르게 진행되지 않았습니다. " to player
+            send "&f[&c신고&f] 신고 타입을 선택해주시길 바랍니다." to player
+            send "&f[&c신고&f] &bType: &f플레이어, 버그, 질문, 로그조사" to player
+            stop
+        else if arg-2 is not set:
+            send "&f[&c신고&f] 신고가 올바르게 진행되지 않았습니다." to player
+            send "&f[&c신고&f] 신고 할 내용을 적어주세요." to player
+            stop
+        else if {리폿대기::%player%} is set:
+            send "&f[&c신고&f] 현재 신고 후 답장 대기 중입니다." to player
+            send "&f[&c신고&f] 신고는 최대 일주일 이상 소요될 수 있습니다." to player
+            stop
+        else:
+            send "&f[&c신고&f] 서버에 신고를 전송하고 있습니다. 잠시만 기다려주세요." to player
+            set {리폿대기::%player%} to true
+            #make embed:
+            #    set title of embed to "**서버 신고가 등록되었습니다. (%player%)**"
+            #    set embed color of embed to red 
+            #    add field named "" with value "**신고 위치: %player's location%**" to fields of embed
+            #    add field named "" with value "**신고 날짜: %now%**" to fields of embed
+            #    add field named "" with value "**신고 타입: %arg-1%**" to fields of embed
+            #    add field named "" with value "**신고 내용: %arg-2%**" to fields of embed
+            #post last made embed to guild channel with id "1167382105370673172" 
+            send "&f[&c신고&f] 신고를 전송할 수 없습니다. - Service Stop -" to player
+            #send "&f[&c신고&f] 허위 신고나 장난 신고는 정지 처리 됩니다." to player
+
+# Tab complete 기능
+on tab complete of "/신고":
+    set tab completions for position 1 to "플레이어", "버그", "질문", "건의", "로그조사" and "채팅신고"

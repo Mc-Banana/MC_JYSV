@@ -1,0 +1,6 @@
+on join:
+    set join message to "&f[&a+&f] &a%player% &f님이 서버에 접속하셨습니다. &7(%number of all players%명 접속)"
+
+
+on quit:
+    set quit message to "&f[&c-&f] &a%player% &f님이 퇴장하셨습니다."
