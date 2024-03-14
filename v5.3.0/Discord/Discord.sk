@@ -1,5 +1,5 @@
 on define new bot named "Jinyoon":
-    token: "MTE3NjUyOTI2NTMzNzA1NzMxMA.GiU8vc.w315RMAd7hCRcx_XCHAVnbZEcQ0KLXw6wz_aRk"
+    token: "원숭이토큰"
     intents: default intents
     policy: all
     auto reconnect: true
