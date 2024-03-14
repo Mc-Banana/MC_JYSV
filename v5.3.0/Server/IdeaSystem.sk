@@ -1,6 +1,0 @@
-command /아이디어:
-    trigger:
-        send "&e----------&6[ 아이디어 뱅크 ]&e----------" to sender
-        send "&61. 멘션 기능 - &5_Thio&6 님이 제안하셨어요!" to sender
-        send "&62. 디스코드 스탯 확인 - &e노란 아홀로틀&6 님이 제안하셨어요!" to sender
-        send "&e----------&6[ 아이디어 뱅크 ]&e---------- " to sender

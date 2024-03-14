@@ -1,8 +1,0 @@
-every 1 seconds:
-    loop all players:
-        if loop-player has elytra:
-            remove elytra from loop-player's inventory
-            send title "&f[ &e겉날개 &f]" with subtitle "&c겉날개가 회수되었습니다." to loop-player
-            send "&f[&4JAS&f] 저희 서버는 겉날개 이용을 허용하지 않습니다." to loop-player
-            send "&f[&4JAS&f] 다만 플레이어님의 정성에 따라서 &b2,000&f 달러를 보내드렸으니 확인해주세요!" to loop-player
-            add 2000 to {돈::%uuid of loop-player%}

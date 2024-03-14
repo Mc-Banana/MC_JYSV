@@ -1,3 +1,0 @@
-command /CPing:
-    trigger:
-        send "Pong!" to sender
