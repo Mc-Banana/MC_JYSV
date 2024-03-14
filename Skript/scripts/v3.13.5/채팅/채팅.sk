@@ -1,0 +1,15 @@
+on chat:
+    if {Playtime.%uuid of player%}/3600 < 1:
+        set message format to "&7%{Playtime.%uuid of player%}/3600%h &fㅣ %player% : %message%"
+    else if {Playtime.%uuid of player%}/3600 < 5:
+        set message format to "&6%{Playtime.%uuid of player%}/3600%h &fㅣ %player% : %message%"
+    else if {Playtime.%uuid of player%}/3600 < 15:
+        set message format to "&d%{Playtime.%uuid of player%}/3600%h &fㅣ %player% : %message%"
+    else if {Playtime.%uuid of player%}/3600 < 50:
+        set message format to "&e%{Playtime.%uuid of player%}/3600%h &fㅣ %player% : %message%"
+    else if {Playtime.%uuid of player%}/3600 < 100:
+        set message format to "&c%{Playtime.%uuid of player%}/3600%h &fㅣ %player% : %message%"
+    else if {Playtime.%uuid of player%}/3600 < 250:
+        set message format to "&4%{Playtime.%uuid of player%}/3600%h &fㅣ %player% : %message%"
+    else if {Playtime.%uuid of player%}/3600 > 1:
+        set message format to "&e&l%{Playtime.%uuid of player%}/3600%h &fㅣ %player% : %message%"

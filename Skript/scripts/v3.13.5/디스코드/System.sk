@@ -1,0 +1,10 @@
+on define new bot named "Jinyoon":
+    token: "token"
+    intents: default intents
+    policy: all
+    auto reconnect: true
+    compression: none
+    on guild ready:
+        set online status of bot "Jinyoon" to online
+        send "&f[&5BOT&f] 전설의 해파리 노숙자가 서버에서 노숙을 시작합니다." to console
+

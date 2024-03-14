@@ -1,0 +1,4 @@
+on quit:
+    delete {이동.%uuid of player%}
+on join:
+    delete {이동.%uuid of player%}

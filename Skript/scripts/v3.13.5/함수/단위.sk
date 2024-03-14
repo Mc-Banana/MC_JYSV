@@ -1,0 +1,11 @@
+#Unit
+function Unit(n:number) :: text:
+	set {_t} to "%{_n}%"
+	loop round up length of {_t} / 3 times:
+		set {_l} to last 3 characters of {_t}
+		set {_t} to first length of {_t} - 3 characters of {_t}
+		if loop-number = 1:
+			set {_r} to "%{_l}%"
+		else:
+			set {_r} to "%{_l}%,%{_r}%"
+	return {_r}

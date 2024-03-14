@@ -1,0 +1,2 @@
+on server list ping:
+    set motd to "                      &6전설의 진윤 봉사기%nl%      &a새로운 봉사기가 인민을 반깁네다! &c[ 1.19 - 1.20.1 ]"

@@ -1,0 +1,44 @@
+# OPTION
+options:
+    error_prefix: &f[&c오류&f]
+
+
+command /상점:
+    trigger:
+        if {이동.%uuid of player%} is not set:
+            set {이동.%uuid of player%} to true
+            send title "&c[ &f텔레포트 중... &c]" with subtitle "&a3&f초 뒤 이동합니다!" to player
+            play sound "minecraft:block.note_block.bell" to player
+            wait 1 seconds
+            send title "&c[ &f텔레포트 중... &c]" with subtitle "&62&f초 뒤 이동합니다!" to player
+            play sound "minecraft:block.note_block.bell" to player
+            wait 1 seconds
+            send title "&c[ &f텔레포트 중... &c]" with subtitle "&c1&f초 뒤 이동합니다!" to player
+            play sound "minecraft:block.note_block.bell" to player
+            wait 1 seconds
+            teleport player at location(0.5, 90.5, 0.5, world "shop")
+            play sound "minecraft:block.end_portal.spawn" to player
+            send title "&c[ &f텔레포트 완료! &c]" with subtitle "&f해당 장소로 이동했습니다!" to player
+            delete {이동.%uuid of player%}
+        else:
+            send "{@error_prefix} &c현재 다른 텔레포트가 대기목록에 있습니다!" to player
+
+command /야생:
+    trigger:
+        if {이동.%uuid of player%} is not set:
+            set {이동.%uuid of player%} to true
+            send title "&c[ &f텔레포트 중... &c]" with subtitle "&a3&f초 뒤 이동합니다!" to player
+            play sound "minecraft:block.note_block.bell" to player
+            wait 1 seconds
+            send title "&c[ &f텔레포트 중... &c]" with subtitle "&62&f초 뒤 이동합니다!" to player
+            play sound "minecraft:block.note_block.bell" to player
+            wait 1 seconds
+            send title "&c[ &f텔레포트 중... &c]" with subtitle "&c1&f초 뒤 이동합니다!" to player
+            play sound "minecraft:block.note_block.bell" to player
+            wait 1 seconds
+            teleport player at location(8512.5, 4.5, 9881.5, world "world")
+            play sound "minecraft:block.end_portal.spawn" to player
+            send title "&c[ &f텔레포트 완료! &c]" with subtitle "&f해당 장소로 이동했습니다!" to player
+            delete {이동.%uuid of player%}
+        else:
+            send "{@error_prefix} &c현재 다른 텔레포트가 대기목록에 있습니다!" to player

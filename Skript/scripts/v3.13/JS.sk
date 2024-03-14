@@ -1,0 +1,1442 @@
+options:
+    # 바나나 및 진윤 외 코드를 수정하지 마세요.
+    # === [ Version ] ===
+    version : 3.13
+    updates : &f유저장터 삭제와 실제 화폐 시스템 추가
+
+    # === [ Cooltime ] ===
+    Cooltime : 900
+
+    # === [ Message ] ===
+    prefix_PvP : &f[&6PvP&f]
+    permission_msg : &c권한이 없습니다.
+    
+    # === [ 밴 기능 ] ===
+    ban : &f[&4BAN&f]
+    kick : &f[&cKICK&f]
+
+    # === [ 플러그인 Hider ] ===
+    command_blacklist: "/pl" or "/plugins" or "/ver" or "/version" or "/about" or "/?" or "/help" or "/icanhasbukkit"
+
+# 0. Setting
+on load:
+    send "&f[&6LOAD&f] 서버 시스템이 로드 되었습니다. &7( Version: {@version} &7)" to ops
+    send "&f[&6LOAD&f] 변경 사항: {@updates} " to ops
+    set {_version} to "{@version}"
+    set {업뎃로그::%{_version}%} to "{@updates}"
+    set {업뎃버전::%{_version}%} to {_version}
+    send action bar "&6시스템이 변경되었습니다. &b/업뎃로그 &f{@version}" to all players
+
+# Main. Update Log
+command /업뎃로그 [<text>]:
+    trigger:
+        set {_n} to "%arg-1%"
+        if arg-1 is not set:
+            send "&f[&6LOAD&f] 최근 업데이트 &7( &av{@version} &7)" to player
+            send "&f[&6LOAD&f] 변경 사항 : &r{@updates}" to player
+        else if {업뎃버전::%{_n}%} is not set:
+            send "&f[&6LOAD&f] 해당 버전은 로그가 기록되지 않았습니다." to player
+        else if {업뎃버전::%{_n}%} is set:
+            send "&f[&6LOAD&f] 업데이트 로그 &7( &av%arg-1% &7)" to player
+            send "&f[&6LOAD&f] 변경 사항 : &r%{업뎃로그::%{_n}%}%" to player
+        else:
+            send "&f[&6LOAD&f] &c로그를 불러올 수가 없네요..." to sender
+# Tab complete 기능
+on tab complete of "/업뎃로그":
+    set tab completions for position 1 to {업뎃버전::*}
+
+
+# 1. PvP System
+# 함수
+
+command /pvp [<text>] [<text>]:
+    trigger:
+        if arg-1 is not set:
+            if {PvP::%uuid of player%} is not set:
+                set {PvP::%uuid of player%} to {@Cooltime}
+                send "{@prefix_PvP} &f당신은 이제 &cPvP &f로 전환되었습니다." to player
+                send "{@prefix_PvP} &f이제 당신은 &c공격&f을 받을 수 있으며 아이템을 잃을 수 있습니다." to player
+                send "{@prefix_PvP} &c다만 건축물을 &c테러&f 할 수 없습니다." to player
+                broadcast "{@prefix_PvP} &6%player% &f님이 이제 &cPvP &f상태입니다."
+                stop
+            else:
+                if {PvP::%uuid of player%} is 0:
+                    delete {PvP::%uuid of player%}
+                    send "{@prefix_PvP} &f당신은 이제 &cPvP &7꺼짐 &f으로 전환 되었습니다." to player
+                    broadcast "{@prefix_PvP} &6%player% &f님은 이제 더 이상 &cPvP &f상태가 아닙니다."
+                    stop
+                else:
+                    set {_view} to {PvP::%uuid of player%}
+                    send "{@prefix_PvP} &f변경할 수 있는 시간이 지나지 않아 &cPvP &f상태를 변경할 수 없습니다." to player
+                    send "{@prefix_PvP} &b%{_view}% &f초 후에 변경할 수 있습니다." to player
+        else:
+            if arg-1 is "help":
+                send "{@prefix_PvP} &cPvP &f도움말에 오신 걸 환영합니다." to player
+                send "{@prefix_PvP}  " to player
+                send "{@prefix_PvP} &f먼저 &cPvP &f상태에서는 공격과 아이템을 잃을 수 있습니다." to player
+                send "{@prefix_PvP} &f또한 활성화 이후 &b15&f분 동안 변경하실 수 없습니다." to player
+                send "{@prefix_PvP} &cPvP &f상태가 켜져있다고 하여서 건축물을 테러하실 수 없습니다." to player
+                send "{@prefix_PvP} &c전투 중 &f나가거나 하는 플레이어 발견 시 신고해주세요." to player
+                send "{@prefix_PvP} &cPvP &f가 꺼져있는 플레이어를 공격할 수 없습니다." to player
+                send "{@prefix_PvP}   " to player
+                send "{@prefix_PvP} &f또한 &cPvP &f상태가 켜져있는 경우 &c사망 시&f 아이템을 잃으실 수 있습니다." to player
+                send "{@prefix_PvP}    " to player
+                send "{@prefix_PvP} &f해당 도움말은 기본 1 &cPvP &f도움말 입니다." to player
+                stop
+
+            if sender is op:
+                if arg-1 is "모두해제":
+                    delete {PvP::*}
+                    send "{@prefix_PvP} &f이제 모든 플레이어가 &cPvP &f상태가 해제됩니다." to player
+                    broadcast "{@prefix_PvP} &f이제 &a모든 플레이어&f가 &cPvP &7해제 &f상태로 변경됩니다."
+                else if arg-1 is "모두허용":
+                    set {PvP::*} to 0
+                    send "{@prefix_PvP} &f이제 모든 플레이어가 &cPvP &f상태가 허용됩니다." to player
+                    broadcast "{@prefix_PvP} &f이제 &a모든 플레이어&f가 &cPvP &a허용 &f상태로 변경됩니다."
+                else if arg-1 is "쿨타임제거":
+                    set {PvP::*} to 1
+                    send "{@prefix_PvP} &f이제 모든 플레이어의 쿨타임을 제거합니다. &7( 0초 )" to player
+                else if arg-1 is "리스트":
+                    send "{@prefix_PvP} &6PvP &f상태인 플레이어 &7(&6%number of {PvP::*}%&7)" to player
+                    loop {PvP::*}:
+                        send "{@prefix_PvP} &6PvP &f상태인 플레이어: %loop-index parsed as player%" to player
+                else if arg-1 is "시간확인":
+                    if arg-2 is not set:
+                        send "{@prefix_PvP} &b/pvp &e시간확인 &6<플레이어> &7형식으로 입력해야 합니다." to player
+                    else:
+                        set {_arg2} to arg-2 parsed as player
+                        if {PvP::%uuid of {_arg2}%} is not set:
+                            set {_view} to "&70&f초"
+                        else:
+                            set {_view} to {PvP::%uuid of {_arg2}%}
+                        send "{@prefix_PvP} &b%arg-2% &f님은 %{_view}% &f초 남았습니다." to player
+            else:
+                send "{@prefix_PvP} {@permission_msg}" to sender
+                stop
+
+# Tab complete 기능
+on tab complete of "/pvp":
+    if player is op:
+        set tab completions for position 1 to "모두해제", "모두허용", "쿨타임제거", "시간확인", "help" and "리스트"
+
+# 1-1. Time Change
+every 1 seconds:
+    loop all players:
+        if {PvP::%uuid of loop-player%} is set:
+            if {PvP::%uuid of loop-player%} > 0:
+                subtract 1 from {PvP::%uuid of loop-player%}
+        if {유저상점쿨타임::%uuid of loop-player%} is set:
+            if {유저상점쿨타임::%uuid of loop-player%} > 0:
+                subtract 1 from {유저상점쿨타임::%uuid of loop-player%}
+
+# 1-2. PvP Chat
+on chat:
+    set {_m} to message
+    if message contains "[좌표]":
+        set {_x} to round player's x-coordinate
+        set {_y} to round player's y-coordinate
+        set {_z} to round player's z-coordinate
+        if "%player's world%" is "world":
+            set {_world} to "&a오버월드"
+        else if "%player's world%" is "world_nether":
+            set {_world} to "&c네더"
+        else if "%player's world%" is "world_the_end":
+            set {_world} to "&5엔드"
+        else:
+            set {_world} to "&d미지의 세계"
+        replace all "[좌표]" with "&6[ &b%player%&f의 위치&7: &cX: %{_x}%&f, &6Y: %{_y}%&f, &eZ: %{_z}%&f, &a%{_world}%&f &6]" in {_m}
+    if {PvP::%uuid of player%} is not set:
+        set message format to "&fㅣ &8☠ &fㅣ &f%player% : %colored {_m}%"
+    else:
+        set message format to "&fㅣ &4☠ &fㅣ &f%player% : %colored {_m}%"
+
+# 1-3. Tab
+on join:
+    if {PvP::%uuid of player%} is not set:
+        set player's tab name to "&8☠ &fㅣ &7%player%"
+    else:
+        set player's tab name to "&4PvP &4☠ &fㅣ &7%player%"
+on command:
+    wait 1 tick
+    if {PvP::%uuid of player%} is not set:
+        set player's tab name to "&8☠ &fㅣ &7%player%"
+    else:
+        set player's tab name to "&4PvP &4☠ &fㅣ &7%player%"
+
+
+# 1-4. 데미지
+on damage of player:
+    if attacker is a player:
+        if {PvP::%uuid of attacker%} is not set:
+            cancel event
+            send "{@prefix_PvP} 당신은 &cPvP &f상태가 아닙니다.  <cmd:/pvp help>&a[ PvP 도움말 ]<reset>" to attacker 
+            stop
+        else if {PvP::%uuid of victim%} is not set:
+            cancel event
+            send "{@prefix_PvP} &cPvP &f상태가 아닌 플레이어를 공격할 수 없습니다.  <cmd:/pvp help>&a[ PvP 도움말 ]<reset>" to attacker 
+on death of player:
+    if {PvP::%uuid of victim%} is set:
+        drop all items in victim's inventory at victim
+        set victim's experience to 0
+        clear victim's inventory
+    else:
+        stop
+# 2. Rule
+on join:
+    delete {IP::%uuid of player%}
+    set {IP::%uuid of player%} to ip of player
+    send "&f[&6RULE&f] 모든 규칙은 디스코드에 있습니다." to player
+    send "&f[&6RULE&f] /PvP help 미 확인 시 책임은 플레이어에게 있습니다." to player
+    send "&f[&6RULE&f] VPN 사용을 엄격히 금지하고 있습니다." to player
+    send "&f[&6RULE&f] <url:https://discord.gg/dZTeK6kUw9>&5[ 디스코드 ]<reset>" to player
+
+# 3. 밴 및 킥
+command /iplogreset:
+    trigger:
+        if sender is op:
+            delete {IP::*}
+            send "&f[&cIP&f] 밴 목적으로 되어있던 IP 로그가 모두 초기화 되었습니다. &f:: &b%player%" to console
+            execute console command "kick @a 서버의 처벌 설정이 관리진에 의해 삭제되었습니다.  재접속해주세요."
+
+
+command /밴 [<offlineplayer>] [<text>]:
+    trigger:
+        if sender is op:
+            kick arg-1 because "&c당신은 서버에서 차단되었습니다.%nl% %nl%&7사유 : %arg-2% %nl% %nl%&7접속 가능 날짜 : &a영구 정지 %nl% &7밴 된 날짜 기준으로 일주일 내로 이의 신청을 할 수 있습니다."
+            ban {IP::%uuid of arg-1%} because "&c당신은 서버에서 차단되었습니다.%nl% %nl%&7사유 : %arg-2% %nl% %nl%&7접속 가능 날짜 : &a영구 정지 %nl% &7밴 된 날짜 기준으로 일주일 내로 이의 신청을 할 수 있습니다."
+            broadcast "{@ban} &b%arg-1% &f님께서 관리자 &b%player% &f에 의해 &6영구 정지 &f처분이 이루워집니다."
+            broadcast "{@ban} &7사유 &f: &r%colored arg-2%"
+        else if sender is console:
+            kick arg-1 because "&c당신은 서버에서 차단되었습니다.%nl% %nl%&7사유 : %arg-2% %nl% %nl%&7접속 가능 날짜 : &a영구 정지 %nl% &7밴 된 날짜 기준으로 일주일 내로 이의 신청을 할 수 있습니다."
+            ban {IP::%uuid of arg-1%} because "&c당신은 서버에서 차단되었습니다.%nl% %nl%&7사유 : %arg-2% %nl% %nl%&7접속 가능 날짜 : &a영구 정지 %nl% &7밴 된 날짜 기준으로 일주일 내로 이의 신청을 할 수 있습니다."
+            broadcast "{@ban} &b%arg-1% &f님께서 운영자 또는 안티치트&f에 의해 &6영구 정지 &f처분이 이루워집니다."
+            broadcast "{@ban} &7사유 &f: &r%colored arg-2%"
+        else:
+            send "&c접근 권한이 없습니다." to player
+
+
+command /언밴 [<offlineplayer>] [<text>]:
+    trigger:
+        if sender is op:
+            execute console command "pardon-ip %{IP::%uuid of arg-1%}%"
+            broadcast "{@ban} &b%arg-1% &f님께서 관리자 &b%player% &f에 의해 &6정지 해제 &f처분이 이루워집니다."
+            broadcast "{@ban} &7사유 &f: &r%colored arg-2%"
+        else if sender is console:
+            execute console command "pardon-ip %{IP::%uuid of arg-1%}%"
+            broadcast "{@ban} &b%arg-1% &f님께서 운영자 또는 안티치트 &f에 의해 &6정지 해제 &f처분이 이루워집니다."
+            broadcast "{@ban} &7사유 &f: &r%colored arg-2%"
+        else:
+            send "&c접근 권한이 없습니다." to player
+
+command /킥 [<offlineplayer>] [<text>]:
+    trigger:
+        if sender is op:
+            kick arg-1 due to "&c당신은 서버에서 강제 퇴장되었습니다.%nl% %nl%&7사유 : %arg-2% %nl% %nl%&7바로 접속이 가능합니다. %nl% &7강제 퇴장은 이의 신청 및 부여자에 대한 항소가 가능합니다. %nl% &7부여자 : %player%"
+            broadcast "{@kick} &b%arg-1% &f님께서 관리자 &b%player% &f에 의해 &6강제 퇴장 &f처분이 이루워집니다."
+            broadcast "{@kick} &7사유 &f: &r%colored arg-2%"
+        else if sender is console:
+            kick arg-1 due to "&c당신은 서버에서 강제 퇴장되었습니다.%nl% %nl%&7사유 : %arg-2% %nl% %nl%&7바로 접속이 가능합니다. %nl% &7강제 퇴장은 이의 신청 및 부여자에 대한 항소가 가능합니다. %nl% &7부여자 : %player%"
+            broadcast "{@kick} &b%arg-1% &f님께서 운영자 또는 안티치트&f에 의해 &6강제 퇴장 &f처분이 이루워집니다."
+            broadcast "{@kick} &7사유 &f: &r%colored arg-2%"
+        else:
+            send "&c접근 권한이 없습니다." to player
+
+
+command /타임밴 [<offlineplayer>] [<text>] [<text>]:
+    trigger:
+        set {_arg2} to arg-2
+        replace all "일" with " day" in {_arg2}
+        replace all "초" with " seconds" in {_arg2}
+        replace all "분" with " minute" in {_arg2}
+        replace all "_" and "-" with " " in {_arg2}
+        replace all "시간" with " hours" in {_arg2}
+        replace all "달" with " months" in {_arg2}
+        replace all "년" with " years" in {_arg2}
+        set {_arg2} to {_arg2} parsed as timespan
+        set {_remaining} to now
+        add {_arg2} to {_remaining}
+        set {_remaining} to {_remaining} formatted as "yyyy년 MM월 dd일 HH시 mm분 ss초"
+        if sender is op:
+            kick arg-1 because "&c당신은 서버에서 차단되었습니다.%nl% %nl%&7사유 : %arg-3% %nl% %nl%&7접속 가능 날짜 : &a%{_remaining}% %nl% &7밴 된 날짜 기준으로 일주일 내로 이의 신청을 할 수 있습니다."
+            ban {IP::%uuid of arg-1%} because "&c당신은 서버에서 차단되었습니다.%nl% %nl%&7사유 : %arg-3% %nl% %nl%&7접속 가능 날짜 : &a%{_remaining}% %nl% &7밴 된 날짜 기준으로 일주일 내로 이의 신청을 할 수 있습니다." for {_arg2}
+            broadcast "{@ban} &b%arg-1% &f님께서 관리자 &b%player% &f에 의해 &6%arg-2% 정지 &f처분이 이루워집니다. &7( %{_remaining}% )"
+            broadcast "{@ban} &7사유 &f: &r%colored arg-3%"
+        else if sender is console:
+            kick arg-1 because "&c당신은 서버에서 차단되었습니다.%nl% %nl%&7사유 : %arg-3% %nl% %nl%&7접속 가능 날짜 : &a%{_remaining}% 후 %nl% &7밴 된 날짜 기준으로 일주일 내로 이의 신청을 할 수 있습니다."
+            ban {IP::%uuid of arg-1%} because "&c당신은 서버에서 차단되었습니다.%nl% %nl%&7사유 : %arg-3% %nl% %nl%&7접속 가능 날짜 : &a%{_remaining}% %nl% &7밴 된 날짜 기준으로 일주일 내로 이의 신청을 할 수 있습니다." for {_arg2}
+            broadcast "{@ban} &b%arg-1% &f님께서 운영자 또는 안티치트&f에 의해 &6%arg-2% 정지 &f처분이 이루워집니다. &7( %{_remaining}% )"
+            broadcast "{@ban} &7사유 &f: &r%colored arg-3%"
+        else:
+            send "&c접근 권한이 없습니다." to player
+
+command /경고 [<offlineplayer>] [<text>]:
+    trigger:
+        if sender is op:
+            broadcast "&f[&cWARN&f] &b%arg-1% &f님께서 관리자 &b%player% &f에 의해 &6기록 경고 &f처분이 이루워집니다. &7( 기록됨 )"
+            broadcast "&f[&cWARN&f] &7사유 &f: &r%colored arg-2%"
+            add 1 to {경고::%uuid of arg-1%}
+        else if sender is console:
+            broadcast "&f[&cWARN&f] &b%arg-1% &f님께서 운영자 또는 안티치트&f에 의해 &6기록 경고 &f처분이 이루워집니다. &7( 기록됨 )"
+            broadcast "&f[&cWARN&f] &7사유 &f: &r%colored arg-2%"
+            add 1 to {경고::%uuid of arg-1%}
+        else:
+            send "&c접근 권한이 없습니다." to player
+
+command /경고차감 [<offlineplayer>] [<text>]:
+    trigger:
+        if sender is op:
+            broadcast "&f[&cWARN&f] &b%arg-1% &f님께서 관리자 &b%player% &f에 의해 &6기록 경고 &f차감이 이루워집니다 &7( 기록됨 )"
+            broadcast "&f[&cWARN&f] &7사유 &f: &r%colored arg-2%"
+            subtract 1 from {경고::%uuid of arg-1%}
+        else if sender is console:
+            broadcast "&f[&cWARN&f] &b%arg-1% &f님께서 운영자 또는 안티치트&f에 의해 &6기록 경고 &f차감이 이루워집니다. &7( 기록됨 )"
+            broadcast "&f[&cWARN&f] &7사유 &f: &r%colored arg-2%"
+            subtract 1 from {경고::%uuid of arg-1%}
+        else:
+            send "&c접근 권한이 없습니다." to player
+
+command /경고통계 [<offlineplayer>]:
+    trigger:
+        if arg-1 is not set:
+            send "&6========= &f[ &c경고 &f] &6=========" to player
+            if {경고::%uuid of player%} is not set:
+                send "&6|  &f나의 경고 횟수는 &b0&f회 입니다!" to player
+            else:
+                send "&6|  &f나의 경고 횟수는 &6%{경고::%uuid of player%}%&f회 입니다." to player
+            send "&6========= &f[ &c경고 &f] &6=========  " to player
+        else:
+            send "&6========= &f[ &c경고 &f] &6=========" to player
+            if {경고::%uuid of arg-1%} is not set:
+                send "&6|  &b%arg-1%&f의 경고 횟수는 &b0&f회 입니다!" to player
+            else:
+                send "&6|  &b%arg-1%&f의 경고 횟수는 &6%{경고::%uuid of arg-1%}%&f회 입니다." to player
+            send "&6========= &f[ &c경고 &f] &6=========  " to player
+
+# 4. 플러그인 가리기
+on command:
+    set {_cmd} to "/%command%"
+    if {_cmd} is {@command_blacklist}:
+        if {_cmd} contains "/pl":
+            commandsender is player
+            cancel event
+            send "&6Bukkit Plugins: (1):" to sender
+            send "&8- &e*&a넌 그것을 볼 수 없따!" to sender
+        else:
+            commandsender is player
+            cancel event
+    else if {_cmd} contains "bukkit:" or "spigot:" or "paper:":
+        commandsender is player
+        cancel event
+        
+on tab complete:
+    if event-string is {@command_blacklist}:
+        clear tab completions
+    else if event-string contains "bukkit:" or "spigot:" or "paper:":
+        clear tab completions
+
+# 5. 제한 구역
+every 15 seconds:
+    loop all players:
+        if "%loop-player's world%" is "world":
+            set {_x} to round loop-player's x-coordinate
+            set {_z} to round loop-player's z-coordinate
+
+            if {_x} < 50:
+                teleport loop-player at location(8512, 6, 9881, world "world")
+                send "&f[&a?!?&f] 당신은 이 결계를 벗어날 수 없습니다!" to loop-player
+                stop
+            else if {_z} < 50:
+                teleport loop-player at location(8512, 6, 9881, world "world")
+                send "&f[&a?!?&f] 당신은 이 결계를 벗어날 수 없습니다!" to loop-player
+                stop
+            else if {_x} > 16800:
+                teleport loop-player at location(8512, 6, 9881, world "world")
+                send "&f[&a?!?&f] 당신은 이 결계를 벗어날 수 없습니다!" to loop-player
+                stop
+            else if {_z} > 19872:
+                teleport loop-player at location(8512, 6, 9881, world "world")
+                send "&f[&a?!?&f] 당신은 이 결계를 벗어날 수 없습니다!" to loop-player
+                stop
+# 6. 귓속말
+command /w [<offlineplayer>] [<text>]:
+    trigger:
+        if arg-1 is set:
+            set {_m} to arg-2
+            if arg-1 is player:
+                send "&f[&c오류&f] 자신에겐 귓속말을 보낼 수 없습니다." to player
+            else if arg-2 is not set:
+                send "&f[&c오류&f] 귓속말 내용을 보내셔야 합니다." to player
+            else if arg-1 is not online:
+                send "&f[&c오류&f] 해당 플레이어는 온라인이 아닙니다." to player
+            else if {_m} contains "[좌표]":
+                set {_x} to round player's x-coordinate
+                set {_y} to round player's y-coordinate
+                set {_z} to round player's z-coordinate
+                if "%player's world%" is "world":
+                    set {_world} to "&a오버월드"
+                else if "%player's world%" is "world_nether":
+                    set {_world} to "&c네더"
+                else if "%player's world%" is "world_the_end":
+                    set {_world} to "&5엔드"
+                else:
+                    set {_world} to "&d미지의 세계"
+                replace all "[좌표]" with "&6[ &b%player%&f의 위치&7: &cX: %{_x}%&f, &6Y: %{_y}%&f, &eZ: %{_z}%&f, &a%{_world}%&f &6]" in {_m}
+            if arg-2 is set:
+                send "&f[ &b나 &6-> &b%arg-1% &f]&f: %colored {_m}%" to player
+                send "&f[ &b%player% &6-> &b나 &f]&f: %colored {_m}%" to arg-1
+                play sound "minecraft:block.note_block.chime" to arg-1
+
+        else:
+            send "&f[&c오류&f] 귓속말을 보낼 플레이어 이름을 적어주세요." to player
+
+# 8. 디스코드
+on define new bot named "Jinyoon":
+    token: "token"
+    intents: default intents
+    policy: all
+    auto reconnect: true
+    compression: none
+    on guild ready:
+        set online status of bot "Jinyoon" to online
+
+
+discord command 파일업로드 [<text>]:
+    prefixes: !
+    trigger:
+        if "%event-user%" contains "진윤 서버 하는 노숙자":
+            stop
+        else if "%event-user%" contains "cats_banana":
+            if arg-1 is not set:
+                make embed:
+                    set title of embed to "**파일 업로드 주소가 필요합니다.**"
+                    set embed color of embed to orange 
+                    set thumbnail of embed to "https://bit.ly/45oLird"
+                    add field named "" with value "**/파일업로드 <URL>**" to fields of embed
+                reply with last made embed
+            else:
+                make embed:
+                    set title of embed to "**잠시만 기다려주세요... 파일을 업로드 하고 있습니다...**"
+                    set embed color of embed to orange 
+                    set thumbnail of embed to "https://bit.ly/45oLird"
+                    add field named "" with value "**서버에 파일을 보내고 있습니다.**" to fields of embed
+                reply with last made embed
+                delete file "plugins\Skript\scripts\JinyoonSkript.sk"
+                download file from "%arg-1%" to file "plugins\Skript\scripts\JinyoonSkript.sk"
+                make embed:
+                    set title of embed to "**파일을 로드하고 있습니다.**"
+                    set embed color of embed to lime 
+                    set thumbnail of embed to "https://bit.ly/45oLird"
+                    add field named "" with value "**파일 리로드가 시작됩니다.**" to fields of embed
+                reply with last made embed
+                set {디코서버} to true
+                execute console command "sk reload JinyoonSkript.sk"
+        else:
+            stop
+
+on load:
+    if {디코서버} is true:
+        delete {디코서버}
+        make embed:
+            set title of embed to "**파일이 적용되었습니다.**"
+            set embed color of embed to lime 
+            set thumbnail of embed to "https://bit.ly/45oLird"
+            add field named "" with value "**JinyoonSkript.sk 가 로드 되었습니다.**" to fields of embed
+            add field named "" with value "**버전 : {@version}**" to fields of embed
+            add field named "" with value "**업데이트 : {@updates}**" to fields of embed
+        post last made embed to text channel with id "1160573731039621191"
+        
+
+discord command 서버상태:
+    prefixes: !
+    trigger:
+        if tps from last 1m > 19.8:
+            make embed:
+                set title of embed to "**짜잔! 서버 상태가 등장했어요!!**"
+                set embed color of embed to lime 
+                add field named "" with value "**TPS : %tps from last 1m%**" to fields of embed
+                add field named "" with value "**접속자 : %number of all players%명**" to fields of embed
+                add field named "" with value "**``` %all players% ```**" to fields of embed
+        else if tps from last 1m > 18:
+            make embed:
+                set title of embed to "**짜잔! 서버 상태가 등장했어요!!**"
+                set embed color of embed to orange 
+                add field named "" with value "**TPS : %tps from last 1m%**" to fields of embed
+                add field named "" with value "**접속자 : %number of all players%명**" to fields of embed
+                add field named "" with value "**``` %all players% ```**" to fields of embed
+        else if tps from last 1m < 18:
+            make embed:
+                set title of embed to "**짜잔! 서버 상태가 등장했어요!!**"
+                set embed color of embed to red 
+                add field named "" with value "**TPS : %tps from last 1m%**" to fields of embed
+                add field named "" with value "**접속자 : %number of all players%명**" to fields of embed
+                add field named "" with value "**``` %all players% ```**" to fields of embed
+        reply with last made embed
+
+
+
+
+# join and quit
+on join:
+    set join message to "&e%player% 님이 서버에 접속하셨습니다."
+on quit:
+    set quit message to "&e%player% 님이 서버에서 퇴장하셨습니다."
+
+
+
+
+# 화폐 시스템
+on join:
+    execute player command "스코어보드:재생성"
+
+command /스코어보드:재생성:
+    trigger:
+        wipe player's sidebar   
+        send "&6스코어보드를 생성 중입니다. &7( 기다려주세요. )" to player
+        delete {스코어보드::%player%}
+        wait 1.5 seconds
+        set {스코어보드::%player%} to true
+        send "&6스코어보드가 &a활성화&6 되었습니다." to player
+        while {스코어보드::%player%} is true:
+            wipe player's sidebar
+            set name of sidebar of player to "  &6&l&k0&r  <##DA81F5>%player%  &6&l&k0&r  "
+            set score " " in sidebar of player to 9
+            set score " &6&l●  &e돈  &f:  &e%Unit({화폐::%uuid of player%})%&f원" in sidebar of player to 8
+            set score " &6&l●  &6순위  &f:  &e%{순위.%uuid of player%}%&f위" in sidebar of player to 7
+            set score "  " in sidebar of player to 6
+            wait 1 seconds
+
+on quit:
+    delete {스코어보드::%player%}
+
+
+on load:
+    loop all players:
+        execute loop-player command "스코어보드:재생성"
+        if {화폐::%uuid of loop-player%} is not set:
+            set {화폐::%uuid of loop-player%} to 0
+        if {순위.%uuid of loop-player%} is not set:
+            set {순위.%uuid of loop-player%} to "&c0"
+
+
+on join:
+    if {화폐::%uuid of player%} is not set:
+        set {화폐::%uuid of player%} to 0
+    if {순위.%uuid of player%} is not set:
+        set {순위.%uuid of player%} to "&c0"
+
+#Unit
+function Unit(n:number) :: text:
+	set {_t} to "%{_n}%"
+	loop round up length of {_t} / 3 times:
+		set {_l} to last 3 characters of {_t}
+		set {_t} to first length of {_t} - 3 characters of {_t}
+		if loop-number = 1:
+			set {_r} to "%{_l}%"
+		else:
+			set {_r} to "%{_l}%,%{_r}%"
+	return {_r}
+
+# Ranking
+function EffSettingRank(s:senders,key:texts,value:numbers,form:text="",line:integer=5):
+    set {_form} to "[<rank>] <key> = <value>" if {_form} is ""
+    loop {_value::*}:
+        set {_value} to loop-value * 10000
+        add loop-index to {_rank::%{_value}%::*}
+    set {_index::*} to reversed indexes of {_rank::*}
+    set {_n} to 0
+    loop {_index::*}:
+        set {_value} to loop-value parsed as integer / 10000
+        add 1 to {_rank}
+        loop {_rank::%loop-value-1%::*}:
+            add 1 to {_n}
+            set {_msg} to {_form}
+            replace "<rank>" with "%{_rank}%" in {_msg}
+            replace "<key>" with {_key::%loop-value-2%} in {_msg}
+            replace "<value>" with "%Unit({_value})%" in {_msg}
+            set {ranking::%{_n}%::플레이어} to {_key::%loop-value-2%}
+            set {ranking::%{_n}%::돈} to Unit({_value})
+            set {rankingnumber::%{_key::%loop-value-2%} parsed as player%} to {_n}
+        if {_rank} >= {_line}:
+            exit loop
+
+# 유저상점
+options:
+    usershop_prefix: &f[&6유저장터&f]
+
+command /유저장터 [<text>] [<text>]:
+    description: 유저끼리 거래할 수 있는 장터입니다.
+    trigger:
+        if arg-1 is not set:
+            send "{@usershop_prefix} &c유저장터를 열거나 판매할 수 있습니다." to player
+            send "{@usershop_prefix} &c판매를 원하시면 &b/유저장터 &e판매 &6가격" to player
+            send "{@usershop_prefix} &c구매를 원하시면 &b/유저장터 &e열기" to player
+
+        else if arg-1 is "쿨타임제거":
+            if player is op:
+                delete {유저상점쿨타임::*}
+                send "&c쿨타임이 삭제되었습니다." to player
+
+
+        else if arg-1 is "판매":
+            if {유저상점쿨타임::%uuid of player%} is not set:
+                if arg-2 is not set:
+                    send "{@usershop_prefix} &c유저장터에 올릴 아이템의 가격을 정하지 않았습니다." to player
+                    stop
+                else if arg-2 parsed as integer is not set:
+                    send "{@usershop_prefix} &c유저장터에 올릴 아이템의 가격은 숫자여야 합니다. &7( 무조건 정수여야 합니다! )" to player
+                    stop
+                else if player's tool is not set:
+                    send "{@usershop_prefix} &c유저장터에 올릴 아이템을 손에 들고 있어야 합니다!" to player
+                    stop
+                else if player's tool is barrier:
+                    send "{@usershop_prefix} &c해당 아이템을 업로드 하려 했으나 올릴 수 없었습니다." to player
+                    stop
+                else:
+                    set {_n} to number of {유저장터::아이템::*}+1
+                    send "{@usershop_prefix} &a유저 장터에 아이템을 &b업로드&a하고 있습니다." to player
+                    if {_n} is not set:
+                        send "{@usershop_prefix} &c오류가 발생했습니다. &7( 렉으로 인한 판매 취소 )" to player
+                        stop
+                    else:
+                        set {_arg2} to arg-2
+                        set {_arg2} to arg-2 parsed as integer
+                        if player's tool is air:
+                            send "{@usershop_prefix} &c판매 할 아이템을 감지하지 못했습니다." to player
+                        else if {_arg2} < 0:
+                            send "{@usershop_prefix} &c0 이하로는 입력할 수 없어요.." to player
+                        else:
+                            set {유저상점쿨타임::%uuid of player%} to 120
+                            set {유저장터::아이템::%{_n}%} to player's tool
+                            remove player's tool from player's inventory
+                            set {유저장터::가격::%{_n}%} to {_arg2}
+                            set {유저장터::판매자::%{_n}%} to uuid of player
+                            send "{@usershop_prefix} &a유저 장터에 아이템을 &b업로드&a하였습니다!" to player 
+                            send action bar "{@usershop_prefix}  &6유저상점&f에 &b%player% &f님이 새로운 아이템을 판매하고 있습니다!" to all players
+            else:
+                if {유저상점쿨타임::%uuid of player%} <= 0:
+                    if arg-2 is not set:
+                        send "{@usershop_prefix} &c유저장터에 올릴 아이템의 가격을 정하지 않았습니다." to player
+                        stop
+                    else if arg-2 parsed as integer is not set:
+                        send "{@usershop_prefix} &c유저장터에 올릴 아이템의 가격은 숫자여야 합니다. &7( 무조건 정수여야 합니다! )" to player
+                        stop
+                    else if player's tool is not set:
+                        send "{@usershop_prefix} &c유저장터에 올릴 아이템을 손에 들고 있어야 합니다!" to player
+                        stop
+                    else if player's tool is barrier:
+                        send "{@usershop_prefix} &c해당 아이템을 업로드 하려 했으나 올릴 수 없었습니다." to player
+                        stop
+                    else:
+                        set {_n} to number of {유저장터::아이템::*}+1
+                        send "{@usershop_prefix} &a유저 장터에 아이템을 &b업로드&a하고 있습니다." to player
+                        if {_n} is not set:
+                            send "{@usershop_prefix} &c오류가 발생했습니다. &7( 렉으로 인한 판매 취소 )" to player
+                            stop
+                        else:
+                            set {_arg2} to arg-2
+                            set {_arg2} to arg-2 parsed as integer
+                            if player's tool is air:
+                                send "{@usershop_prefix} &c판매 할 아이템을 감지하지 못했습니다." to player
+                            else if {_arg2} < 0:
+                                send "{@usershop_prefix} &c0 이하로는 입력할 수 없어요.." to player
+                            else:
+                                set {유저상점쿨타임::%uuid of player%} to 120
+                                set {유저장터::아이템::%{_n}%} to player's tool
+                                remove player's tool from player's inventory
+                                set {유저장터::가격::%{_n}%} to {_arg2}
+                                set {유저장터::판매자::%{_n}%} to uuid of player
+                                send "{@usershop_prefix} &a유저 장터에 아이템을 &b업로드&a하였습니다!" to player 
+                                send action bar "{@usershop_prefix}  &6유저상점&f에 &b%player% &f님이 새로운 아이템을 판매하고 있습니다!" to all players
+                else:
+                    set {_view} to {유저상점쿨타임::%uuid of player%}
+                    send "{@usershop_prefix} &f사용하실 시간이 지나지 않아 사용하실 수 없습니다." to player
+                    send "{@usershop_prefix} &b%{_view}% &f초 후에 사용하실 수 있습니다" to player
+
+
+        
+        else if arg-1 is "열기":
+            set {_page} to 1
+            send "{@usershop_prefix} &f유저 장터가 열렸습니다." to player
+            open chest inventory with 6 row named "&6유저 장터 &7- &b%{_page}% &f페이지" to player
+        else if arg-1 is "모두제거":
+            if sender is op:
+                send "{@usershop_prefix} &a현재 작용중인 &b%number of {유저장터::아이템::*}% &a개가 삭제되었습니다." to sender
+                delete {유저장터::아이템::*} and {유저장터::가격::*} and {유저장터::판매자::*}  
+            else:
+                send "{@usershop_prefix} &c권한이 없습니다." to sender
+
+        else if arg-1 is "가짜아이템생성":
+            if sender is op:
+                if arg-2 is not set:
+                    send "{@usershop_prefix} &c가짜 아이템을 생성할 개수를 적어주세요." to sender
+                else:
+                    send "{@usershop_prefix} &a가짜 아이템이 생성되고 있습니다..." to sender
+                    set {_arg2} to arg-2 parsed as integer
+                    set {_n} to number of {유저장터::아이템::*}+1
+                    loop {_arg2} times:
+                        set {유저장터::아이템::%{_n}%} to gold ingot or iron ingot or diamond or netherite ingot or coal or copper ingot
+                        set {유저장터::가격::%{_n}%} to 1
+                        set {유저장터::판매자::%{_n}%} to uuid of player
+                        add 1 to {_n}
+                        wait 1 tick
+                    send "{@usershop_prefix} &a모두 생성됬습니다." to sender
+            else:
+                send "{@usershop_prefix} &c권한이 없습니다." to sender
+
+
+
+on inventory open:
+    wait 1 tick
+    while player's current inventory's name contains "&6유저 장터 &7-":
+        # 페이지 감지하지
+        set {_page} to uncolored player's current inventory's name
+        replace all "유저", "장터", "-", "페이지" and " " with "" in {_page}
+        set {_page} to {_page} parsed as integer
+        # 보기 시스템
+        set {_n} to 0
+        loop 45 time:
+            set slot {_n} of player's current inventory to air
+            add 1 to {_n}
+        set {_n} to 45
+        loop 9 times:
+            set slot {_n} of player's current inventory to black stained glass pane
+            add 1 to {_n}
+        #아이템 채우기
+        set {_n} to (45*({_page}-1))+1
+        set {_a} to 0
+        loop 45 times:
+            if {유저장터::아이템::%{_n}%} is not set:
+                set slot {_a} of player's current inventory to red stained glass pane named "&c비어있는 아이템입니다." with lore "&7직접 아이템을 판매해보시는건 어떤가요?"
+                add 1 to {_n} and {_a}
+            else:
+                set slot {_a} of player's current inventory to {유저장터::아이템::%{_n}%} with lore lore of {유저장터::아이템::%{_n}%} and " " and "&6--------- [ 아이템 정보 ] ---------" and "  &f[&6-&f] 구매 : &b%Unit({유저장터::가격::%{_n}%})% &f원" and "  &f[&6-&f] 판매자 : %{유저장터::판매자::%{_n}%} parsed as offlineplayer%"
+                add 1 to {_n} and {_a}
+        set slot 46 of player's current inventory to arrow named "&c이전 페이지로" with lore "&7클릭 시 현재 페이지의 이전으로 돌아갑니다." and "&7현재 내 페이지: &b%{_page}% &f페이지"
+        set slot 52 of player's current inventory to arrow named "&a다음 페이지로" with lore "&7클릭 시 현재 페이지의 다음으로 돌아갑니다." and "&7현재 내 페이지: &b%{_page}% &f페이지"
+        wait 2 tick
+
+
+
+on inventory click:
+    if name of player's current inventory contains "&6유저 장터 &7-":
+        cancel event
+        if {정렬중} is not set:
+            set {_page} to uncolored player's current inventory's name
+            replace all "유저", "장터", "-", "페이지" and " " with "" in {_page}
+            set {_page} to {_page} parsed as integer
+            set {_click} to index of event-slot
+            if {_click} is 46:
+                if {_page} > 1:
+                    subtract 1 from {_page}
+                    set name of player's current inventory to "&6유저 장터 &7- &b%{_page}% &f페이지"
+            else if {_click} is 52:
+                add 1 to {_page}
+                set name of player's current inventory to "&6유저 장터 &7- &b%{_page}% &f페이지"
+            
+            else if name of event-slot contains "&c비어있는 아이템입니다.":
+                send "{@usershop_prefix} &c살 수 없는 아이템 입니다 &1ㅠㅠ" to player
+            else:
+                if lore of event-slot contains "&6--------- [ 아이템 정보 ] ---------":
+                    if {_click} < 45:
+                        if {정렬중} is not set:
+                            set {_n} to (({_page}-1)*45)+1+{_click}
+                            if {유저장터::아이템::%{_n}%} is set:
+                                if {유저장터::판매자::%{_n}%} is uuid of player:
+                                    set {정렬중} to true
+                                    give {유저장터::아이템::%{_n}%} to player
+                                    delete {유저장터::아이템::%{_n}%} and {유저장터::가격::%{_n}%} and {유저장터::판매자::%{_n}%}
+                                    send "{@usershop_prefix} 업로드 된 아이템을 성공적으로 반환했습니다." to player
+                                    set {_a} to {_n}
+                                    loop number of {유저장터::아이템::*}-{_n}+1 times:
+                                        set {유저장터::아이템::%{_a}%} to {유저장터::아이템::%{_a}+1%}
+                                        set {유저장터::가격::%{_a}%} to {유저장터::가격::%{_a}+1%}
+                                        set {유저장터::판매자::%{_a}%} to {유저장터::판매자::%{_a}+1%}
+                                        delete {유저장터::아이템::%{_a}+1%} and {유저장터::가격::%{_a}+1%} and {유저장터::판매자::%{_a}+1%}
+                                        add 1 to {_a}
+                                    delete {정렬중}
+                                else:
+                                    open chest inventory with 3 row named "&6유저장터 &7- &b구매 체크 &aID %{_n}%" to player
+                                    set slot 10 of player's current inventory to red concrete named "&c구매 안할꺼에요!" with lore "&7클릭 시 구매를 하지 않고 유저상점으로 돌아갑니다."
+                                    set slot 13 of player's current inventory to gray concrete named "&7어디 한번 계약서를 읽어볼까?" with lore "&7구매 시 환불이 불가능합니다." and "&7해당 아이템이 문제가 있다면 관리진 &eBanana &7에게 신고해주세요." and "&7신고 하면 포상금이 있다구요?"
+                                    set slot 16 of player's current inventory to lime concrete named "&a구매 해버릴꺼에요!" with lore "&7클릭 시 &a&lFlex&r&7 합니다."
+                        else:
+                            send "{@usershop_prefix} &c유저 장터의 직원이 장터를 청소하고 있습니다. 커피를 마시며 기다려 보는건 어떨까요?" to player
+                else:
+                    send "{@usershop_prefix} &c해당 아이템을 구매할 수 없습니다. &7( 인벤토리에 있는 아이템은 구매할 수 없어요. )" to player
+        else:
+            send "{@usershop_prefix} &c유저 장터의 직원이 장터를 청소하고 있습니다. 커피를 마시며 기다려 보는건 어떨까요?" to player
+
+    if name of player's current inventory contains "&6유저장터 &7- &b구매 체크":
+        if "%uncolored lore of event-slot%" contains "니다.":
+            cancel event
+            if event-slot is 10:
+                close player's inventory
+                wait 1 tick
+                execute player command "유저장터 열기"
+            else if event-slot is 16:
+                set {_n} to name of player's current inventory
+                set {_n} to uncolored {_n}
+                replace all " ", "유저장터", "-", "구매", "체크" and "ID" with "" in {_n}
+                if {유저장터::아이템::%{_n}%} is set:
+                    if {유저장터::판매자::%{_n}%} is uuid of player:
+                        set {정렬중} to true
+                        give {유저장터::아이템::%{_n}%} to player
+                        delete {유저장터::아이템::%{_n}%} and {유저장터::가격::%{_n}%} and {유저장터::판매자::%{_n}%}
+                        send "{@usershop_prefix} 업로드 된 아이템을 성공적으로 반환했습니다." to player
+                        set {_a} to {_n}
+                        loop number of {유저장터::아이템::*}-{_n}+1 times:
+                            set {유저장터::아이템::%{_a}%} to {유저장터::아이템::%{_a}+1%}
+                            set {유저장터::가격::%{_a}%} to {유저장터::가격::%{_a}+1%}
+                            set {유저장터::판매자::%{_a}%} to {유저장터::판매자::%{_a}+1%}
+                            delete {유저장터::아이템::%{_a}+1%} and {유저장터::가격::%{_a}+1%} and {유저장터::판매자::%{_a}+1%}
+                            add 1 to {_a}
+                        delete {정렬중}
+                        play sound "minecraft:block.note_block.bell" to player
+                        close player's inventory
+                        wait 1 tick
+                        execute player command "유저장터 열기"
+                        
+                    else:
+                        if {유저장터::가격::%{_n}%} <= {화폐::%uuid of player%}:
+                            set {정렬중} to true
+                            subtract {유저장터::가격::%{_n}%} from {화폐::%uuid of player%}
+                            add {유저장터::가격::%{_n}%} to {화폐::%{유저장터::판매자::%{_n}%}%}
+                            set {_seller} to {유저장터::판매자::%{_n}%} parsed as offlineplayer
+                            give {유저장터::아이템::%{_n}%} to player
+                            send "{@usershop_prefix} &b%player% &f님이 당신의 아이템을 구매했습니다. %nl% &6+ %Unit({유저장터::가격::%{_n}%})%&f원" to {유저장터::판매자::%{_n}%} parsed as player
+                            delete {유저장터::아이템::%{_n}%} and {유저장터::가격::%{_n}%} and {유저장터::판매자::%{_n}%}
+                            set {_a} to {_n}
+                            loop number of {유저장터::아이템::*}-{_n}+1 times:
+                                set {유저장터::아이템::%{_a}%} to {유저장터::아이템::%{_a}+1%}
+                                set {유저장터::가격::%{_a}%} to {유저장터::가격::%{_a}+1%}
+                                set {유저장터::판매자::%{_a}%} to {유저장터::판매자::%{_a}+1%}
+                                delete {유저장터::아이템::%{_a}+1%} and {유저장터::가격::%{_a}+1%} and {유저장터::판매자::%{_a}+1%}
+                                add 1 to {_a}
+                            delete {정렬중}
+                            play sound "minecraft:block.note_block.bell" to player
+                            send "{@usershop_prefix} &f유저상점에서 성공적으로 &b%{_seller}% &f님의 아이템을 구매했습니다." to player
+                            close player's inventory
+                            wait 1 tick
+                            execute player command "유저장터 열기"
+
+                        else:
+                            send "{@usershop_prefix} &f돈이 부족해서 살 수 없습니다." to player
+
+                else:
+                    send "{@usershop_prefix} &c알 수 없는 오류로 해당 아이템을 구매할 수 없습니다." to player
+
+on load:
+    delete {정렬중}
+
+on tab complete of "/유저장터":
+    set tab completions for position 1 to "판매" and "열기"
+
+every 1 minute:
+    execute console command "/순위_새로고침"
+    wait 1 seconds
+    loop all players:
+        if {순위.%uuid of loop-player%} is not set:
+            set {_a} to true
+
+
+    if {_a} is true:
+        execute console command "/순위_새로고침"
+        wait 1 seconds
+        loop all players:
+            if {순위.%uuid of loop-player%} is not set:
+                set {_a} to false
+
+        if {_a} is false:
+            execute console command "/순위_새로고침"
+
+command /순위_새로고침:
+    trigger:
+        if sender is op:
+            send "&f[&6순위&f] &a새로 고침 중입니다..." to player
+            loop all players:
+                set {_list::%loop-player%} to {화폐::%uuid of loop-player%}
+            set {_a} to number of {_list::*}
+            delete {rankingnumber::*} and {ranking::*}
+            EffSettingRank( player, indexes of {_list::*}, {_list::*}, "&f[&6랭킹&f] &b<rank>&f등 &b<key>&f, &b<value>&f원", {_a})
+            loop all players:
+                set {순위.%uuid of loop-player%} to {rankingnumber::%loop-player%}
+            send "&f[&6순위&f] &a새로 고침 완료!" to player
+
+        else if sender is console:
+            send "&f[&6순위&f] &a새로 고침 중입니다..." to console
+            loop all players:
+                set {_list::%loop-player%} to {화폐::%uuid of loop-player%}
+            set {_a} to number of {_list::*}
+            delete {rankingnumber::*} and {ranking::*}
+            EffSettingRank( player, indexes of {_list::*}, {_list::*}, "&f[&6랭킹&f] &b<rank>&f등 &b<key>&f, &b<value>&f원", {_a})
+            loop all players:
+                set {순위.%uuid of loop-player%} to {rankingnumber::%loop-player%}
+            send "&f[&6순위&f] &a새로 고침 완료!" to console
+        else:
+            send "&f[&c권한&f] 당신은 해당 명령어에 접근할 &c권한&f이 없습니다." to player
+# 커스텀 상점
+options:
+    op : &f[&6SHOP&f]
+    user : &f[&6상점&f]
+    error : &f[&c오류&f]
+    ukerr : &f[&8오류&f]
+    debug : &f[&8디버그&f] &7-
+
+command /MONEYSHOP [<text>] [<text>] [<text>] [<text>] [<text>] [<text>] [<text>] [<text>]:
+    trigger:
+        if sender is player:
+            # ====  OP 가 아닌 경우에 명령어 사용시 ====
+            
+            # [A] :: arguments 가 설정되어있는가?
+            if arg-1 is not set:
+                send "{@error} 상점 명령 오류가 발생했습니다." to sender
+                send "{@error} 해당 명령은 관리자 전용이오니 참고해주세요." to sender
+                stop
+
+            # [B] :: arguments 가 상점 열기인가?
+            else if arg-1 is "상점열기":
+                # [1] :: arguments 2 가 설정되어 있는가?
+                if arg-2 is not set:
+                    send "{@error} 상점을 열려고 했으나 오류가 발생했습니다." to sender
+                    send "{@error} &e표시할 상점 이름이 적혀있지 않습니다." to sender
+                    stop
+
+                # [2] :: arguments 2 가 올바른 상점 이름인가?
+                else if {커스텀돈상점::%arg-2%} is not set:
+                    send "{@error} 상점을 열려고 했으나 오류가 발생했습니다." to sender
+                    send "{@error} &e상점 이름이 올바르지 않습니다 &7:: &b%arg-2%" to sender
+                    stop
+
+                # [3] :: arguments 2 가 올바른 상점 이름 이라면,
+                else:
+                    # [1] :: 만약 상점이 닫혀있는 상태라면,
+                    if {커스텀돈상점::%arg-2%::상태} is false:
+                        send "{@user} 해당 상점은 현재 닫혀있습니다." to sender
+                        send "{@user} 다른 상점을 이용해주세요." to sender
+                        stop
+
+                    # [2] :: 만약 상점이 열려있는 상태라면,
+                    else if {커스텀돈상점::%arg-2%::상태} is true:
+                        # [1] :: 상점 Chest 열기
+                        open chest inventory with {커스텀돈상점::%arg-2%::라인} row named "&f[&b상점&f] &b%colored {커스텀돈상점::%arg-2%}%" to player
+                        # [2] :: 상점 내용물 불러오기
+                        set {_n} to 0
+                        loop {커스텀돈상점::%arg-2%::라인}*9 times:
+                            set slot {_n} of player's current inventory to {커스텀돈상점::%arg-2%::아이템::%{_n}%} with lore lore of {커스텀돈상점::%arg-2%::아이템::%{_n}%} and " " and "  &6::  &b좌클릭 &f을 하여 해당 아이템을 &a구매 &f합니다." and "  &6::  &b우클릭 &f을 하여 해당 아이템을 &a판매 &f합니다." and "  &6::  &b쉬프트 &a+ &b좌클릭 &f을 하여 해당 아이템 &a64개&f를 구매합니다." and "  &6::  &b쉬프트 &a+ &b우클릭 &f을 하여 해당 아이템을 &a모두 판매 &f합니다." and " " and "  &a::  &f아이템 정보 &7( 잘못 구매 시 취소할 수 없습니다. )" and "      &a::  &f구매가 &7: &6%{커스텀돈상점::%arg-2%::아이템구매가::%{_n}%}% &f원" and "      &a::  &f판매가 &7: &6%{커스텀돈상점::%arg-2%::아이템판매가::%{_n}%}% &f원" and "  "
+                            add 1 to {_n}
+
+                        # [3] :: 상점 내용물을 모두 불러왔으니, 코드 종료
+                        stop
+                        # [STOP] :: 열기 코드 끝
+                    # [3] :: 위 모든 것이 아닌 상점 상태가 올바르지 않다면,
+                    else:
+                        send "{@ukerr} 상점을 열려고 했으나 오류가 발생했습니다." to sender
+                        send "{@ukerr} &e상점 데이터를 로드하지 못했습니다." to sender
+                        stop
+
+            
+            # [C] :: arguments 가 상점 설정인가?
+            else if arg-1 is "상점설정":
+                # 이 란은 비웁니다.
+                if sender is not op:
+                    send "{@ukerr} 알 수 없는 타입" to sender
+                
+         
+                        
+
+        # 만약 OP 를 보유하고 있다면 [ CONSOLE ],
+        if sender is console:
+            # 만약 보낸 사람이 콘솔 이라면?
+            send "{@error} &e콘솔에서는 모든 명령을 실행할 수 없습니다." to sender
+            send "{@error} &e인게임에서 실행해주세요." to sender
+            # [STOP] :: 콘솔 코드 끝
+            stop
+
+        # 만약 Sender 가 OP 라면?
+        if sender is op:
+            # [C] :: arguments 가 상점 설정인가?
+            if arg-1 is "상점설정":
+                # [*] :: 상점 설정 안내 문구
+                send "{@op} &e당신은 &b상점 설정 &e권한을 설정하고 있습니다." to sender
+
+                # [1] :: 상점 생성
+                if arg-2 is "생성":
+                    # [1] :: 상점 이름이 없는가?
+                    if arg-3 is not set:
+                        send "{@op} 상점 이름이 설정되어있지 않습니다. 아래는 &6사용법&f입니다." to sender
+                        send "{@op} &f/CASHSHOP <ttp:&e상점 설정의 시작입니다>&e상점설정<reset> &6생성 &f<ttp:&6이 곳에 상점 이름을 적어주세요. &7| &f예시 &7:: &f음식 상점>&6상점 이름<reset> " to sender
+                        stop
+                    
+                    # [2] :: 만약 상점 이름이 있다면, 상점 세팅하기
+                    else if arg-3 is set:
+                        # [1] :: 만약 같은 상점 이름이 있다면
+                        if {커스텀돈상점::%arg-3%} is not set:
+                            send "{@op} 상점을 생성하고 있습니다." to sender
+                            set {커스텀돈상점::%arg-3%} to colored arg-3
+                            set {커스텀돈상점::%arg-3%::라인} to 3
+                            set {커스텀돈상점::%arg-3%::상태} to true
+                            send "{@op} 상점을 &a정상&f적으로 생상하였습니다." to sender
+                            send "{@op} 상점 이름은 색깔코드가 있을 경우 그대로 반영되지 않습니다. 삭제해주세요!" to sender
+                            send "{@op} 상점을 수정하려면 &f/CASHSHOP &e상점설정 &6아이템수정 &f/ &6라인수정 &f%uncolored arg-3% &f을 입력해주세요." to sender
+                            stop
+                        else:
+                            send "{@op} 상점을 생성하는데 &c실패&f하였습니다." to sender
+                            send "{@error} &e같은 이름을 가진 상점이 있습니다." to sender
+                            stop
+                # [2] :: 상점 수정
+                else if arg-2 is "아이템수정":
+                    # [1] :: 상점 이름이 없는가?
+                    if arg-3 is not set:
+                        send "{@op} 상점 이름이 설정되어있지 않습니다. 아래는 &6사용법&f입니다." to sender
+                        send "{@op} &f/CASHSHOP <ttp:&e상점 설정의 시작입니다>&e상점설정<reset> &6아이템수정 &f<ttp:&6이 곳에 상점 이름을 적어주세요. &7| &f예시 &7:: &f음식 상점>&6상점 이름<reset> " to sender
+                        stop
+                    # [2] :: 만약 상점 이름이 있다면, 상점 수정하기
+                    else if arg-3 is set:
+                        # [1] :: 만약 입력한 상점이 기록에 있다면
+                        if {커스텀돈상점::%arg-3%} is set:
+                            # [1] :: 상점 Chest 열기
+                            open chest inventory with {커스텀돈상점::%arg-3%::라인} row named "&f[&b상점 설정&f] &b%colored {커스텀돈상점::%arg-3%}%" to player
+                            # [2] :: 상점 내용물 불러오기
+                            set {_n} to 0
+                            loop {커스텀돈상점::%arg-3%::라인}*9 times:
+                                if {커스텀돈상점::%arg-3%::아이템판매가::%{_n}%} is not set:
+                                    set {커스텀돈상점::%arg-3%::아이템판매가::%{_n}%} to "&c판매 불가"
+                                else if {커스텀돈상점::%arg-3%::아이템판매가::%{_n}%} <= 0:
+                                    set {커스텀돈상점::%arg-3%::아이템판매가::%{_n}%} to "&c판매 불가"
+
+                                if {커스텀돈상점::%arg-3%::아이템구매가::%{_n}%} is not set:
+                                    set {커스텀돈상점::%arg-3%::아이템구매가::%{_n}%} to "&c구매 불가"
+                                else if {커스텀돈상점::%arg-3%::아이템구매가::%{_n}%} <= 0:
+                                    set {커스텀돈상점::%arg-3%::아이템구매가::%{_n}%} to "&c구매 불가"
+                                set slot {_n} of player's current inventory to {커스텀돈상점::%arg-3%::아이템::%{_n}%}
+                                add 1 to {_n}
+                            # [3] :: 상점 내용물을 모두 불러왔으니, 코드 종료
+                            stop
+                            # [STOP] :: 열기 코드 끝
+                        # [2] :: 그런데 만약 입력한 상점이 기록 ( DB ) 에 없다면
+                        else:
+                            send "{@error} &b%colored arg-3% &f상점은 없는 상점 입니다." to sender
+                            stop
+                # [3] :: 상점 라인 수정
+                else if arg-2 is "라인수정":
+                    # [1] :: 상점 이름이 없는가?
+                    if arg-3 is not set:
+                        send "{@op} 상점 이름이 설정되어있지 않습니다. 아래는 &6사용법&f입니다." to sender
+                        send "{@op} &f/CASHSHOP <ttp:&e상점 설정의 시작입니다>&e상점설정<reset> &6라인수정 &f<ttp:&6이 곳에 상점 이름을 적어주세요. &7| &f예시 &7:: &f음식 상점>&6상점 이름<reset>  &f<ttp:&6이 곳에 상점 라인을 적어주세요. &7| &f예시 &7:: &f6 &7( 기본 : 3 )>&6줄 수<reset> " to sender
+                        stop
+                    
+                    # [2] :: 만약 상점 이름이 있다면, 상점 수정하기
+                    else if arg-3 is set:
+                        # [1] :: 만약 입력한 상점이 기록에 있다면
+                        if {커스텀돈상점::%arg-3%} is set:
+                            # [1] :: 상점 라인 수정
+                            send "{@op} 상점 라인이 수정 됩니다. &7:: &b%arg-4 parsed as integer%" to sender
+                            set {_number} to arg-4 parsed as integer
+                            set {커스텀돈상점::%arg-3%::라인} to {_number}
+                            send "{@op} 상점 라인이 수정되었습니다." to sender
+
+                            # [2] :: 코드 종료
+                            stop
+                            # [STOP] :: 열기 코드 끝
+                        # [2] :: 그런데 만약 입력한 상점이 기록 ( DB ) 에 없다면
+                        else:
+                            send "{@error} &b%colored arg-3% &f상점은 없는 상점 입니다." to sender
+                            stop
+                # [4] :: 상점 제거
+                if arg-2 is "제거":
+                    # [1] :: 상점 이름이 없는가?
+                    if arg-3 is not set:
+                        send "{@op} 상점 이름이 설정되어있지 않습니다. 아래는 &6사용법&f입니다." to sender
+                        send "{@op} &f/CASHSHOP <ttp:&e상점 설정의 시작입니다>&e상점설정<reset> &6제거 &f<ttp:&6이 곳에 상점 이름을 적어주세요. &7| &f예시 &7:: &f음식 상점>&6상점 이름<reset> " to sender
+                        stop
+                    # [2] :: 만약 상점 이름이 있다면, 상점 제거 세팅하기
+                    else if arg-3 is set:
+                        # [1] :: 만약 같은 상점 이름이 없다면
+                        if {커스텀돈상점::%arg-3%} is not set:
+                            send "{@error} &c해당 상점은 없는 상점입니다." to sender
+                            stop
+                        else:
+                            send "{@op} 상점을 제거하고 있습니다." to sender
+                            delete {커스텀돈상점::%arg-3%}
+                            send "{@op} 상점을 제거하였습니다." to sender
+                            send "{@op} 상점 복구는 스크립트 백업 폴더에서 확인하세요." to sender
+                            stop
+                # [5] :: 상점 로그
+                if arg-2 is "로그":
+                    # [1] :: 상점 로그 Sending
+                    send "{@op} 만들어진 상점 (%number of {커스텀돈상점::*}%)" to sender
+                    stop 
+
+                # [6] :: 아이템 가격설정
+                else if arg-2 is "아이템가격설정":
+                    # [1] :: 상점 이름이 없는가?
+                    if arg-3 is not set:
+                        send "{@op} 상점 이름이 설정되어있지 않습니다. 아래는 &6사용법&f입니다." to sender
+                        send "{@op} &f/CASHSHOP <ttp:&e상점 설정의 시작입니다>&e상점설정<reset> &6아이템가격설정 &f<ttp:&6이 곳에 상점 이름을 적어주세요. &7| &f예시 &7:: &f음식 상점>&6상점 이름<reset>  &f<ttp:&6이 곳에 아이템 라인을 적어주세요. &7| &f예시 &7:: &f0>&6아이템 라인<reset> &f<ttp:&6이 곳에 구매 가격을 적어주세요. &7| &f예시 &7:: &f5000>&6구매 가격<reset> &f<ttp:&6이 곳에 판매 가격을 적어주세요. &7| &f예시 &7:: &f5000>&6판매 가격<reset> " to sender
+                        stop
+                    
+                    # [2] :: 만약 상점 이름이 있다면, 상점 수정하기
+                    else if arg-3 is set:
+                        # [1] :: 만약 입력한 상점이 기록에 있다면
+                        if {커스텀돈상점::%arg-3%} is set:
+                            # [1] 아이템 번호 설정 되어있는가?
+                            if arg-4 is not set:
+                                send "{@op} 아이템 상자 번호가 설정되어있지 않습니다. 아래는 &6사용법&f입니다." to sender
+                                send "{@op} &f/CASHSHOP <ttp:&e상점 설정의 시작입니다>&e상점설정<reset> &6아이템가격설정 &f<ttp:&6이 곳에 상점 이름을 적어주세요. &7| &f예시 &7:: &f음식 상점>&6상점 이름<reset>  &f<ttp:&6이 곳에 아이템 라인을 적어주세요. &7| &f예시 &7:: &f0>&6아이템 라인<reset> &f<ttp:&6이 곳에 구매 가격을 적어주세요. &7| &f예시 &7:: &f5000>&6구매 가격<reset> &f<ttp:&6이 곳에 판매 가격을 적어주세요. &7| &f예시 &7:: &f5000>&6판매 가격<reset> " to sender
+                                stop
+
+                            # [2] 만약 아이템 번호가 올바르지 않는가?
+                            else if arg-4 parsed as integer is not set:
+                                send "{@op} 아이템 상자 번호가 올바르지 않습니다. 숫자여야만 합니다." to sender
+                                send "{@op} &f/CASHSHOP <ttp:&e상점 설정의 시작입니다>&e상점설정<reset> &6아이템가격설정 &f<ttp:&6이 곳에 상점 이름을 적어주세요. &7| &f예시 &7:: &f음식 상점>&6상점 이름<reset>  &f<ttp:&6이 곳에 아이템 라인을 적어주세요. &7| &f예시 &7:: &f0>&6아이템 라인<reset> &f<ttp:&6이 곳에 구매 가격을 적어주세요. &7| &f예시 &7:: &f5000>&6구매 가격<reset> &f<ttp:&6이 곳에 판매 가격을 적어주세요. &7| &f예시 &7:: &f5000>&6판매 가격<reset> " to sender
+                                stop
+
+                            # [3] 만약 아이템 번호가 올바르지 않는가? 2
+                            else if arg-4 parsed as integer > 54:
+                                send "{@op} 아이템 상자 번호가 올바르지 않습니다. 54 초과면 안됩니다." to sender
+                                send "{@op} &f/CASHSHOP <ttp:&e상점 설정의 시작입니다>&e상점설정<reset> &6아이템가격설정 &f<ttp:&6이 곳에 상점 이름을 적어주세요. &7| &f예시 &7:: &f음식 상점>&6상점 이름<reset>  &f<ttp:&6이 곳에 아이템 라인을 적어주세요. &7| &f예시 &7:: &f0>&6아이템 라인<reset> &f<ttp:&6이 곳에 구매 가격을 적어주세요. &7| &f예시 &7:: &f5000>&6구매 가격<reset> &f<ttp:&6이 곳에 판매 가격을 적어주세요. &7| &f예시 &7:: &f5000>&6판매 가격<reset> " to sender
+                                stop
+                            # [4] PASSED
+                            else:
+                                # 구매 가격 설정.
+                                set {_a} to 0
+                                if arg-5 is set:
+                                    if arg-5 parsed as integer is not 0:
+                                        set {커스텀돈상점::%arg-3%::아이템구매가::%arg-4 parsed as integer%} to arg-5 parsed as integer
+                                    else:
+                                        set {커스텀돈상점::%arg-3%::아이템구매가::%arg-4 parsed as integer%} to "&c구매 불가"
+                                    add 1 to {_a}
+                                # 판매 가격 설정.
+                                if arg-6 is set:
+                                    if arg-6 parsed as integer is not 0:
+                                        set {커스텀돈상점::%arg-3%::아이템판매가::%arg-4 parsed as integer%} to arg-6 parsed as integer
+                                    else:
+                                        set {커스텀돈상점::%arg-3%::아이템판매가::%arg-4 parsed as integer%} to "&c판매 불가"
+                                    add 1 to {_a}
+                                # 결과 도출
+                                if {_a} is 0:
+                                    send "{@op} 가격을 설정하려고 했으나 실패하였습니다." to sender
+                                else if {_a} is 1:
+                                    send "{@op} 구매 가격을 설정하였습니다." to sender
+                                else if {_a} is 2:
+                                    send "{@op} 구매 가격과 판매 가격을 설정하였습니다." to sender
+                                else:
+                                    send "{@ukerr} 알 수 없는 오류가 발생했습니다." to sender           
+                        # [2] :: 그런데 만약 입력한 상점이 기록 ( DB ) 에 없다면
+                        else:
+                            send "{@error} &b%colored arg-3% &f상점은 없는 상점 입니다." to sender
+                            stop
+                # [7] Help 명령어
+                else if arg-2 is "도움말":
+                    send "{@error} Help" to sender
+                    send "{@error} /CASHSHOP &e상점설정 &6생성 &b<상점 이름>" to sender
+                    send "{@error} /CASHSHOP &e상점설정 &6아이템수정 &b<상점 이름>" to sender
+                    send "{@error} /CASHSHOP &e상점설정 &6라인수정 &b<상점 이름> &d<라인1~6>" to sender
+                    send "{@error} /CASHSHOP &e상점설정 &6제거 &b<상점 이름>" to sender
+                    send "{@error} /CASHSHOP &e상점설정 &6로그" to sender
+                    send "{@error} /CASHSHOP &e상점설정 &6아이템가격설정 &b<상점 이름> &a<아이템번호> <판매가> &c<구매가>" to sender
+                    send "{@error} /CASHSHOP &e상점열기 &b<상점 이름>" to sender
+                else:
+                    send "{@error} 수정 타입을 얻지 못하였습니다." to sender
+                    send "{@error} /CASHSHOP &e상점설정 &6생성 &b<상점 이름>" to sender
+                    send "{@error} /CASHSHOP &e상점설정 &6아이템수정 &b<상점 이름>" to sender
+                    send "{@error} /CASHSHOP &e상점설정 &6라인수정 &b<상점 이름> &d<라인1~6>" to sender
+                    send "{@error} /CASHSHOP &e상점설정 &6제거 &b<상점 이름>" to sender
+                    send "{@error} /CASHSHOP &e상점설정 &6로그" to sender
+                    send "{@error} /CASHSHOP &e상점설정 &6아이템가격설정 &b<상점 이름> &a<아이템번호> <판매가> &c<구매가>" to sender
+                    send "{@error} /CASHSHOP &e상점열기 &b<상점 이름>" to sender
+            else if arg-1 is "디버그":
+                # [ DEBUG - 로그 표기 ]
+                if arg-2 is "logvisible":
+                    send "{@debug} 로그 표기가 디폴트 상태입니다." to sender
+                    send "{@debug} 해당 디버그 타입은 변경할 수 없습니다." to sender
+                  
+                # [ DEBUG - 구매 판매 로그 표기 ]
+                else if arg-2 is "bslog":
+                    if {커스텀돈상점::로그::bslog} is not set:
+                        set {커스텀돈상점::로그::bslog} to true
+                        send "{@debug} 구매 판매 로그 표기는 이제 true 상태입니다." to sender
+                        send "{@debug} 변경 된 설정이 저장됩니다. ( 적용자 : &bOps &7)" to sender
+                    else:
+                        delete {커스텀돈상점::로그::bslog}
+                        send "{@debug} 구매 판매 로그 표기는 이제 false 상태입니다." to sender
+                        send "{@debug} 변경 된 설정이 저장됩니다. ( 적용자 : &bNone &7)" to sender
+                # [ DEBUG - 타입 없음 ]
+                else:
+                    send "{@op} &7디버그 - 알 수 없는 디버그 타입" to sender
+            else:
+                send "{@error} 수정 타입을 얻지 못하였습니다." to sender
+                send "{@error} /CASHSHOP &e상점설정 &6도움말" to sender
+                send "{@error} /CASHSHOP &e상점열기 &b<상점 이름>" to sender
+                send "{@error} /CASHSHOP &e디버그 &b<디버그 타입>" to sender                      
+                
+        # 만약 그 아무것도 아니라면?
+        else:
+            # 서버 직급 권한을 확인할 수 없으니 IP 차단 진행.
+            send "{@ukerr} &8모든 명령을 수행할 수 없습니다." to sender
+            send "{@ukerr} &8현재 당신의 서버 권한을 확인할 수 없으므로 해당 IP 는 일시적 차단조치가 이루워집니다." to sender
+            send "{@ukerr} &8관리자에게 문의하십시오." to sender
+            wait 1 seconds
+            ban sender's ip because "&4서버 권한을 확인할 수 없어 IP 차단이 진행되었습니다."
+
+            send "{@ukerr} &c%sender% 가 권한 없음으로 IP 차단이 진행되었습니다." to console
+            # 안전상 조치
+            stop
+
+# [1] 상점 수정 저장 코드
+on inventory close:
+    if name of player's current inventory contains "&f[&b상점 설정&f] &b":
+        set {_r} to name of player's current inventory
+        replace all "&f[&b상점 설정&f] &b" with "" in {_r}
+        send "{@op} %{_r}% 상점의 내용물을 &a저장&f중입니다." to sender
+        set {_n} to 0
+        loop {커스텀돈상점::%{_r}%::라인}*9 times:
+            set {커스텀돈상점::%{_r}%::아이템::%{_n}%} to slot {_n} of player's current inventory
+            #delete {커스텀돈상점::%{_r}%::아이템::%{_n}%}'s lore
+            add 1 to {_n}
+
+        send "{@op} %{_r}% 상점의 내용물을 &a저장완료&f 하였습니다." to sender
+    if name of player's current inventory contains "&f[&b상점&f] &b":
+        wait 1 tick
+        open chest inventory with 3 row named "&6Item Shop &f- &b[ 카테고리 ]" to player
+        set {_n} to 0
+        loop 27 times:
+            set slot {_n} of player's current inventory to red concrete named "&c없는 상점입니다... 조금만 기다려주세요 :3"
+            add 1 to {_n}
+        set {_n} to 0
+        loop {커스텀돈상점::*}:
+            set slot {_n} of player's current inventory to lime concrete named "&6&l상점 이름 &r&f: %loop-index%" with lore " " and "&6------------ [ 상점 ] ------------" and "    &f[&6-&f] 좌클릭 시 해당 상점을 열 수 있습니다."
+            add 1 to {_n}
+
+
+
+# [2] 상점 구매 코드
+on inventory click:
+    if inventory name contains "&f[&b상점&f] &b":
+        cancel event
+        set {_r} to name of player's current inventory
+        replace all "&f[&b상점&f] &b" with "" in {_r}
+        play sound "minecraft:ui.button.click" to player
+        if event-slot is not air:
+            # 구매
+            if "%click type%" contains "LEFT":
+                if "%click type%" contains "SHIFT":
+                    if {커스텀돈상점::%{_r}%::아이템구매가::%index of event-slot%} is "&c구매 불가":
+                        send "{@user} &c해당 아이템은 구매 불가 아이템입니다." to player
+                        stop
+                    else:
+                        if {화폐::%uuid of player%} >= {커스텀돈상점::%{_r}%::아이템구매가::%index of event-slot%}*64:
+                            if {커스텀돈상점::로그::bslog} is true:
+                                send "{@debug} &b%player% &7가 아이템을 구매하였습니다." to ops
+                                send "{@debug} &7상점 : %{_r}%" to ops
+                                send "{@debug} &7UUID : %uuid of player%" to ops
+                                send "{@debug} &7이벤트 값 : %Unit({커스텀돈상점::%{_r}%::아이템구매가::%index of event-slot%}*64)%" to ops
+                            # 일반 코드
+                            give 64 of {커스텀돈상점::%{_r}%::아이템::%index of event-slot%} to player
+                            subtract {커스텀돈상점::%{_r}%::아이템구매가::%index of event-slot%}*64 from {화폐::%uuid of player%}
+                            send "{@user} &b%Unit({커스텀돈상점::%{_r}%::아이템구매가::%index of event-slot%}*64)% &f원을 지불하여 아이템을 구매하였습니다." to player
+                        else:
+                            send "{@user} &c돈이 부족하여 구매할 수 없습니다." to player
+                            stop
+                else:
+                    if {커스텀돈상점::%{_r}%::아이템구매가::%index of event-slot%} is "&c구매 불가":
+                        send "{@user} &c해당 아이템은 구매 불가 아이템입니다." to player
+                        stop
+                    else:
+                        if {화폐::%uuid of player%} >= {커스텀돈상점::%{_r}%::아이템구매가::%index of event-slot%}:
+                            if {커스텀돈상점::로그::bslog} is true:
+                                send "{@debug} &b%player% &7가 아이템을 구매하였습니다." to ops
+                                send "{@debug} &7상점 : %{_r}%" to ops
+                                send "{@debug} &7UUID : %uuid of player%" to ops
+                                send "{@debug} &7이벤트 값 : %Unit({커스텀돈상점::%{_r}%::아이템구매가::%index of event-slot%})%" to ops
+                            # 일반 코드
+                            give {커스텀돈상점::%{_r}%::아이템::%index of event-slot%} to player
+                            subtract {커스텀돈상점::%{_r}%::아이템구매가::%index of event-slot%} from {화폐::%uuid of player%}
+                            send "{@user} &b%Unit({커스텀돈상점::%{_r}%::아이템구매가::%index of event-slot%})% &f원을 지불하여 아이템을 구매하였습니다." to player
+                        else:
+                            send "{@user} &c돈이 부족하여 구매할 수 없습니다." to player
+                            stop
+
+            # 판매
+            else if "%click type%" contains "RIGHT":
+                if "%click type%" contains "SHIFT":
+                    if {커스텀돈상점::%{_r}%::아이템판매가::%index of event-slot%} is "&c판매 불가":
+                        send "{@user} &c해당 아이템은 판매 불가 아이템입니다." to player
+                        stop
+                    else:
+                        set {_itemsn} to amount of {커스텀돈상점::%{_r}%::아이템::%index of event-slot%} in inventory of player
+                        if {_itemsn} is not 0:
+                            if {커스텀돈상점::로그::bslog} is true:
+                                send "{@debug} &b%player% &7가 아이템을 판매하였습니다." to ops
+                                send "{@debug} &7상점 : %{_r}%" to ops
+                                send "{@debug} &7UUID : %uuid of player%" to ops
+                                send "{@debug} &7이벤트 값 : %Unit({커스텀돈상점::%{_r}%::아이템판매가::%index of event-slot%})%" to ops
+                            # 일반 코드
+                            remove {_itemsn} of {커스텀돈상점::%{_r}%::아이템::%index of event-slot%} from player's inventory
+                            add {커스텀돈상점::%{_r}%::아이템판매가::%index of event-slot%}*{_itemsn} to {화폐::%uuid of player%}
+                            send "{@user} 아이템 &b%{_itemsn}% &f개를 판매하여 &b%Unit({커스텀돈상점::%{_r}%::아이템판매가::%index of event-slot%}*{_itemsn})% &f원을 받았습니다." to player
+                        else:
+                            send "{@user} &c판매할 아이템이 없어 판매할 수 없습니다." to player
+                            stop
+                else:
+                    if {커스텀돈상점::%{_r}%::아이템판매가::%index of event-slot%} is "&c판매 불가":
+                        send "{@user} &c해당 아이템은 판매 불가 아이템입니다." to player
+                        stop
+                    else:
+                        set {_itemsn} to amount of {커스텀돈상점::%{_r}%::아이템::%index of event-slot%} in inventory of player
+                        if {_itemsn} is not 0:
+                            if {커스텀돈상점::로그::bslog} is true:
+                                send "{@debug} &b%player% &7가 아이템을 판매하였습니다." to ops
+                                send "{@debug} &7상점 : %{_r}%" to ops
+                                send "{@debug} &7UUID : %uuid of player%" to ops
+                                send "{@debug} &7이벤트 값 : %Unit({커스텀돈상점::%{_r}%::아이템판매가::%index of event-slot%})%" to ops
+                            # 일반 코드
+                            remove {커스텀돈상점::%{_r}%::아이템::%index of event-slot%} from player's inventory
+                            add {커스텀돈상점::%{_r}%::아이템판매가::%index of event-slot%} to {화폐::%uuid of player%}
+                            send "{@user} 아이템을 판매하여 &b%Unit({커스텀돈상점::%{_r}%::아이템판매가::%index of event-slot%})% &f원을 받았습니다." to player
+                        else:
+                            send "{@user} &c판매할 아이템이 없어 판매할 수 없습니다." to player
+                            stop
+
+
+
+# 컴플리트
+on tab complete of "/MONEYSHOP":
+    set tab completions for position 1 to "상점설정", "상점열기" and "디버그"
+    if tab arg-1 is "상점설정":
+        set tab completions for position 2 to "생성", "아이템수정", "라인수정", "제거", "로그" and "아이템가격설정"
+        if tab arg-2 is not "로그":
+            set tab completions for position 3 to "< 상점 이름 >"
+    else if tab arg-1 is "상점열기":
+        set tab completions for position 2 to "< 상점 이름 >"
+    else if tab arg-1 is "디버그":
+        set tab completions for position 2 to "logvisible" and "bslog"
+
+
+
+command /itemshop:
+    trigger:
+        open chest inventory with 3 row named "&6Item Shop &f- &b[ 카테고리 ]" to player
+        set {_n} to 0
+        loop 27 times:
+            set slot {_n} of player's current inventory to red concrete named "&c없는 상점입니다... 조금만 기다려주세요 :3"
+            add 1 to {_n}
+        set {_n} to 0
+        loop {커스텀돈상점::*}:
+            set slot {_n} of player's current inventory to lime concrete named "&6&l상점 이름 &r&f: %loop-index%" with lore " " and "&6------------ [ 상점 ] ------------" and "    &f[&6-&f] 좌클릭 시 해당 상점을 열 수 있습니다."
+            add 1 to {_n}
+command /상점:
+    trigger:
+        execute player command "itemshop"
+
+
+on inventory click:
+    if name of player's inventory is "&6Item Shop &f- &b[ 카테고리 ]":
+        cancel event
+        if event-slot is lime concrete:
+            close player's inventory
+            set {_slot} to name of event-slot
+            set {_slot} to uncolored {_slot}
+            replace all "상점 이름", ":" and " " with "" in {_slot}
+            execute player command "MONEYSHOP 상점열기 %{_slot}%"
+
+# - 제거
+on load:
+    loop all players:
+        if {화폐::%uuid of loop-player%} < 0:
+            set {화폐::%uuid of loop-player%} to 0
+            send action bar "&c오류 플레이어 &f: &6%loop-player%" to all players
+
+
+# 송금
+command /송금 [<offlineplayer>] [<integer>]:
+    
+    trigger:
+        if arg-1 is not set:
+            send "&f[&6송금&f] 돈을 보낼 플레이어의 이름이 없습니다." to player
+        else if arg-2 is not set:
+            send "&f[&6송금&f] 돈을 보낼 값이 없습니다." to player
+        else if arg-2 <= 0:
+            send "&f[&6송금&f] 0원 이하로는 보낼 수 없습니다." to player
+        else if {화폐::%uuid of player%} < arg-2:
+            send "&f[&6송금&f] 돈을 보내려고 했으나 해당 만큼 돈을 가지고 있지 않습니다." to player
+        else:
+            subtract arg-2 from {화폐::%uuid of player%}
+            add arg-2 to {화폐::%uuid of arg-1%}
+            send "&f[&6송금&f] 성공적으로 &b%arg-1% &f님에게 &b%Unit(arg-2)%&f원을 보냈습니다." to player
+            send "&f[&6송금&f] &b%player% &f님께서 &b%Unit(arg-2)%&f원을 보내셨습니다." to arg-1
+
+# 돈 전체 제거 
+command /removemoneyparty~!!!!:
+    trigger:
+        if player is op:
+            loop all players:
+                delete {화폐::%uuid of loop-player%}
+
+            send "&c삭제 완료 파티~" to player
+
+command /removemoney [<offlineplayer>]:
+    trigger:
+        if player is op:
+            delete {화폐::%uuid of arg-1%}
+
+            send "&c삭제 완료 파티~" to player
+
+command /addmoney [<offlineplayer>] [<integer>]:
+    trigger:
+        if player is op:
+            add arg-2 to {화폐::%uuid of arg-1%}
+
+            send "&c추카 완료 파티~" to player
+
+command /viewmoney [<offlineplayer>]:
+    trigger:
+        if player is op:
+
+            send "&c돈 보기 파티 &b%{화폐::%uuid of arg-1%}%" to player
+
+on right click with firework rocket:
+    cancel event
+    
+on join:
+    if {돈.%uuid of player%} is set:
+        if {돈.%uuid of player%} < 0:
+            delete {돈.%uuid of player%}
+            set {화폐::%uuid of player%} to 0
+            send "&f[&6복구&f] 버그 자금은 복구될 수 없습니다." to player
+        else:
+            if {돈.%uuid of player%} > 200000:
+                delete {돈.%uuid of player%}
+                add 200000 to {화폐::%uuid of player%}
+                send "&f[&6복구&f] 화폐 &b200,000&f원이 복구되었습니다." to player
+            else:
+                add {돈.%uuid of player%} to {화폐::%uuid of player%}
+                send "&f[&6복구&f] 화폐 &b%Unit({돈.%uuid of player%})%&f원이 복구되었습니다." to player
+                delete {돈.%uuid of player%}
+
+    else if {화폐::%uuid of player%} is not set:
+        set {화폐::%uuid of player%} to 0
+
+
+command /순위:
+    trigger:
+        open chest inventory with 6 row named "&f[&6RANKING&f] 화폐 랭킹" to player
+
+on inventory open:
+    wait 1 tick
+    while player's current inventory's name contains "&f[&6RANKING&f] 화폐 랭킹":
+        set {_n} to 0
+        loop 54 time:
+            set slot {_n} of player's current inventory to barrier named "&c랭킹 집계 중입니다..." with lore "&7서버의 랭킹을 불러오고 있습니다."
+            add 1 to {_n}
+        set {_n} to 0
+        loop 54 time:
+            set slot {_n} of player's current inventory to red concrete named "&c없는 플레이어" with lore "&7이 플레이어는 없네요..."
+            add 1 to {_n}
+        set {_n} to 0
+        set {_a} to number of all players
+        loop {_a} times:
+            set {_p} to {ranking::%{_n}+1%::플레이어} parsed as player
+            set slot {_n} of player's current inventory to skull of {_p} named "&f[&6%{_n}+1%등&f] &b%{ranking::%{_n}+1%::플레이어}%&f님" with lore " " and "&6------------ [ 플레이어 돈 ] ------------" and "&6     &f[&6+&f] &f돈 : &b%{ranking::%{_n}+1%::돈}%&f원"
+            add 1 to {_n}
+        wait 1 seconds

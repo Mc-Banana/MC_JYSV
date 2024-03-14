@@ -1,0 +1,3 @@
+every 1 seconds:
+    loop all players:
+        add 1 to {Playtime.%uuid of loop-player%}

@@ -1,0 +1,38 @@
+discord command 서버업로드 [<text>] [<text>]:
+    prefixes: /
+    trigger:
+        if "%event-user%" contains "cats_banana":
+            if arg-1 is not set:
+                make embed:
+                    set title of embed to "**업데이트 명령이 잘못되었습니다...**"
+                    set embed color of embed to orange 
+                    set footer of embed to "올바른 명령어 : /서버업로드 <변경 할 파일 좌표> <업로드 코드 파일 주소>"
+                reply with hidden last made embed
+            else if arg-2 is not set:
+                make embed:
+                    set title of embed to "**업데이트 명령이 잘못되었습니다...**"
+                    set embed color of embed to orange 
+                    set footer of embed to "올바른 명령어 : /서버업로드 <변경 할 파일 좌표> <업로드 코드 파일 주소>"
+                reply with hidden last made embed
+            else:
+                make embed:
+                    set title of embed to "**Loading..**"
+                    set embed color of embed to orange 
+                    add field named "" with value "**서버가 파일을 다운로드 하고 있습니다.**" to fields of embed
+                reply with hidden last made embed
+                delete file "%arg-1%"
+                download file from "%arg-2%" to file "%arg-1%"
+                make embed:
+                    set title of embed to "**Loading...**"
+                    set embed color of embed to lime 
+                    add field named "" with value "**파일이 성공적으로 다운되었습니다.**" to fields of embed
+                    add field named "" with value "**시스템 로드가 시작되었습니다.**" to fields of embed
+                reply with hidden last made embed
+        else:
+            make embed:
+                set title of embed to "**관리진 외 사용할 수 없는 명령어입니다.**"
+                set embed color of embed to red 
+                add field named "" with value "****" to fields of embed
+            reply with hidden last made embed
+            
+
